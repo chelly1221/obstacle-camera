@@ -53,7 +53,7 @@
   #toast{ bottom:calc(78px + env(safe-area-inset-bottom)) !important; }
   /* standalone(홈화면 전체화면)에선 상단 노치/다이내믹 아일랜드도 피하도록 섹션 상단 인셋 추가.
      black-translucent 상태바 + viewport-fit=cover라 이 여백이 없으면 상단 칩·나침반이 가린다. */
-  @media all and (display-mode: standalone){
+  @media (display-mode: standalone), (display-mode: fullscreen){
     #sec-ar,#sec-map,#sec-list,#sec-gallery,#sec-perms{
       top:env(safe-area-inset-top) !important;
     }
