@@ -14,16 +14,16 @@
  */
 'use strict';
 
-var CACHE = 'arcam-v9-2026-07-19';
+var CACHE = 'arcam-v10-2026-07-19';
 
 // 오프라인 시작에 반드시 필요한 같은 출처 리소스 (하나라도 실패하면 install 실패).
 var CORE = [
   './',
   './index.html',
   './manifest.webmanifest',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/apple-touch-icon.png'
+  './icons/icon-192.png?v=2',
+  './icons/icon-512.png?v=2',
+  './icons/apple-touch-icon.png?v=2'
 ];
 
 // 있으면 좋은 외부 리소스 (실패해도 install은 계속 진행).
