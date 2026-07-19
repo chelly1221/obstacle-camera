@@ -14,7 +14,7 @@
  */
 'use strict';
 
-var CACHE = 'arcam-v8-2026-07-19';
+var CACHE = 'arcam-v9-2026-07-19';
 
 // 오프라인 시작에 반드시 필요한 같은 출처 리소스 (하나라도 실패하면 install 실패).
 var CORE = [

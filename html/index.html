@@ -3,18 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-visual">
-<title>토지이용 AR · 증강현실 토지이용계획도</title>
+<title>AR 전파장애물</title>
 <meta name="description" content="토지이용계획도(VWorld lt_c_lhblpn)를 카메라 화면 위에 증강현실로 겹쳐 보여주는 웹앱. GPS·나침반으로 건물의 거리·방위를 실시간 표시합니다.">
 <meta name="theme-color" content="#08090b">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="토지이용 AR">
+<meta name="apple-mobile-web-app-title" content="AR 전파장애물">
 <meta name="mobile-web-app-capable" content="yes">
-<meta property="og:title" content="토지이용 AR">
+<meta property="og:title" content="AR 전파장애물">
 <meta property="og:description" content="토지이용계획도를 카메라 위에 증강현실로 겹쳐 보는 웹앱">
 <meta property="og:type" content="website">
 <link rel="manifest" href="/manifest.webmanifest">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23a60739' d='M12 2a7 7 0 00-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 00-7-7z'/%3E%3Ccircle cx='12' cy='9' r='2.5' fill='white'/%3E%3C/svg%3E">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
@@ -183,20 +182,7 @@
     </div>
     <div style="position:relative;flex:1;min-height:0">
       <div id="map" style="position:absolute;inset:0"></div>
-      <!-- 투명도 카드 -->
-      <div style="position:absolute;left:12px;right:12px;top:12px;background:rgba(8,9,11,.82);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:11px 13px;z-index:500">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
-          <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:12px;font-weight:700">계획도 오버레이</span>
-            <div id="ov-toggle" style="cursor:pointer;width:38px;height:22px;border-radius:999px;background:#a60739;position:relative;transition:.15s">
-              <div id="ov-knob" style="position:absolute;top:2px;left:18px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.15s"></div>
-            </div>
-          </div>
-          <span id="opacity-pct" style="font-size:12px;font-weight:800;color:#a60739">60%</span>
-        </div>
-        <input id="opacity-range" type="range" min="0" max="1" step="0.05" value="0.6" style="width:100%;height:18px">
-        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:5px">VWorld 토지이용계획도(lt_c_lhblpn) · <span id="overlay-status">불러오는 중</span></div>
-      </div>
+      <!-- 계획도 오버레이는 상시 on · 60% 고정(state.overlayOn/opacity 기본값). 조절 카드 없음. -->
       <!-- 하단 버튼 -->
       <div style="position:absolute;left:12px;bottom:14px;display:flex;gap:8px;z-index:500">
         <div id="btn-recenter" style="cursor:pointer;background:rgba(8,9,11,.85);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.14);border-radius:11px;padding:9px 13px;font-size:12px;font-weight:700">내 위치로</div>
@@ -1105,7 +1091,7 @@
     var self = this;
     if (!window.L || !this._mapEl) { this._mapTry = (this._mapTry || 0) + 1; if (this._mapTry < 60) setTimeout(function () { self.initMapWhenReady(); }, 120); return; }
     var sv = load(LS.view, null) || DEFAULT_VIEW;
-    var map = L.map(this._mapEl, { zoomControl: false, attributionControl: false }).setView([sv.lat, sv.lon], sv.zoom || 16);
+    var map = L.map(this._mapEl, { zoomControl: false, attributionControl: false }).setView([sv.lat, sv.lon], sv.zoom || 14);
     this._map = map;
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
     var LandUse = L.TileLayer.extend({
@@ -1262,8 +1248,8 @@
     // 지도 탭이 숨겨져 있으면(컨테이너 크기 0) flyTo 애니메이션이 NaN 좌표를 만든다.
     // 보일 때만 부드럽게 이동하고, 숨겨져 있으면 애니메이션 없이 위치만 설정한다.
     var visible = this._mapEl && this._mapEl.offsetWidth > 0;
-    if (visible) { this._map.invalidateSize(); this._map.flyTo([g.lat, g.lon], 16, { duration: 0.6 }); }
-    else { this._map.setView([g.lat, g.lon], 16, { animate: false }); }
+    if (visible) { this._map.invalidateSize(); this._map.flyTo([g.lat, g.lon], 14, { duration: 0.6 }); }
+    else { this._map.setView([g.lat, g.lon], 14, { animate: false }); }
     this.drawLoc();
   };
   app.setOpacity = function (v) { this.setState({ opacity: v }); if (this._overlay) this._overlay.setOpacity(v); };
@@ -1641,12 +1627,6 @@
       : '<span>0</span>');
 
     // 지도
-    setStyle('ov-toggle', 'background', S.overlayOn ? acc : 'rgba(255,255,255,.2)');
-    setStyle('ov-knob', 'left', S.overlayOn ? '18px' : '2px');
-    setStyle('opacity-pct', 'color', acc);
-    setText('opacity-pct', Math.round(S.opacity * 100) + '%');
-    var opr = $('opacity-range'); if (opr) opr.value = S.opacity;
-    setText('overlay-status', S.overlayStatus);
     setText('point-count-box', '건물 ' + S.points.length + '개');
 
     // 건물 목록(그룹별)
@@ -1838,15 +1818,11 @@
     // 카메라 꺼짐 안내 → 한 번에 카메라·위치·나침반 권한 요청
     $('backdrop-cam').addEventListener('click', function () { app.requestCamera(); app.requestLocation(); app.attachOrientation(false); });
 
-    // 슬라이더
-    $('opacity-range').addEventListener('input', function (e) { app.setOpacity(parseFloat(e.target.value)); });
-
     // AR 버튼
     $('btn-capture').addEventListener('click', function () { app.capturePhoto(); });
     $('btn-gallery').addEventListener('click', function () { app.setTab('gallery'); });
 
     // 지도 버튼
-    $('ov-toggle').addEventListener('click', function () { app.toggleOverlay(); });
     $('btn-recenter').addEventListener('click', function () { app.recenter(); });
     $('btn-clear').addEventListener('click', function () { app.clearDraw(); });
 
@@ -2314,6 +2290,30 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wirePwa);
   else wirePwa();
 })();
+</script>
+<script>
+  /* 설치형 PWA의 안드로이드 시스템 바(상태바·내비게이션 바)로 생기는 흰 여백 제거.
+     매니페스트 display:fullscreen을 무시하는 크롬이 많아, 첫 사용자 제스처에서 JS Fullscreen API로
+     실제 몰입(immersive) 전체화면에 진입한다(sticky — 가장자리 스와이프해도 바가 자동 재숨김).
+     설치형(standalone/fullscreen 표시모드·iOS navigator.standalone)에서만 동작 → 일반 브라우저 탭은 미개입.
+     iOS는 요소 requestFullscreen 미지원 → req 없으면 자동 스킵(apple-mobile-web-app-* 메타로 처리). */
+  (function () {
+    var de = document.documentElement;
+    var req = de.requestFullscreen || de.webkitRequestFullscreen;
+    if (!req) return;
+    function installed() {
+      try {
+        return (window.matchMedia && (matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches))
+          || window.navigator.standalone === true;
+      } catch (e) { return false; }
+    }
+    function enter() {
+      if (!installed()) return;
+      if (document.fullscreenElement || document.webkitFullscreenElement) return;
+      try { var p = req.call(de); if (p && p.catch) p.catch(function () {}); } catch (e) {}
+    }
+    window.addEventListener('pointerdown', enter, { passive: true });
+  })();
 </script>
 </body>
 </html>
