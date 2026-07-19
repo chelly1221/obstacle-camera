@@ -1,4 +1,4 @@
-# 토지이용 AR — static site (nginx) + 지점 공유 API (node).
+# 토지이용 AR — static site (nginx) + 건물 공유 API (node).
 #
 #   docker compose up -d
 #
@@ -8,7 +8,7 @@
 #
 # nginx proxies `/api/*` to the `backend` (node) service over a private
 # `internal` network, so the API is reachable ONLY through nginx — never
-# exposed directly to Caddy or the internet. Shared 지점/그룹 persist to
+# exposed directly to Caddy or the internet. Shared 건물/그룹 persist to
 # ./data/store.json (bind-mounted, survives restarts & redeploys).
 #
 # First-time setup on a fresh host (already done on this VM):

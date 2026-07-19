@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>토지이용 AR · 증강현실 토지이용계획도</title>
-<meta name="description" content="토지이용계획도(VWorld lt_c_lhblpn)를 카메라 화면 위에 증강현실로 겹쳐 보여주는 웹앱. GPS·나침반으로 지점의 거리·방위를 실시간 표시합니다.">
+<meta name="description" content="토지이용계획도(VWorld lt_c_lhblpn)를 카메라 화면 위에 증강현실로 겹쳐 보여주는 웹앱. GPS·나침반으로 건물의 거리·방위를 실시간 표시합니다.">
 <meta name="theme-color" content="#08090b">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -71,7 +71,7 @@
       <div style="width:64px;height:64px;border-radius:18px;background:rgba(166,7,57,.18);border:1px solid rgba(166,7,57,.45);display:flex;align-items:center;justify-content:center">
         <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="13" rx="3" stroke="#e5688f" stroke-width="2"/><circle cx="12" cy="12.5" r="3.2" stroke="#e5688f" stroke-width="2"/><path d="M8 6l1.5-2h5L16 6" stroke="#e5688f" stroke-width="2" stroke-linejoin="round"/></svg>
       </div>
-      <div style="font-size:15px;font-weight:800;color:#f4f4f5;line-height:1.5">카메라를 켜면 실제 화면 위에<br>설정한 지점이 겹쳐 표시됩니다</div>
+      <div style="font-size:15px;font-weight:800;color:#f4f4f5;line-height:1.5">카메라를 켜면 실제 화면 위에<br>설정한 건물이 겹쳐 표시됩니다</div>
       <div id="backdrop-cam" style="cursor:pointer;background:#a60739;border-radius:12px;padding:12px 22px;font-size:14px;font-weight:800;color:#fff">카메라 켜기</div>
       <div id="backdrop-hint" style="font-size:12px;color:rgba(255,255,255,.5);line-height:1.5;max-width:260px"></div>
     </div>
@@ -97,7 +97,7 @@
     <!-- AR 핀 -->
     <div id="pins"></div>
 
-    <!-- 화면밖 지점 화살표 -->
+    <!-- 화면밖 건물 화살표 -->
     <div id="arrows"></div>
 
     <!-- AR 안내(위치·나침반 대기) -->
@@ -128,7 +128,7 @@
   <section id="sec-map" style="position:absolute;z-index:1;inset:0 0 62px 0;flex-direction:column;background:#0a0b0d;display:none">
     <div style="padding:14px 16px 10px;border-bottom:1px solid rgba(255,255,255,.07)">
       <div style="font-size:17px;font-weight:800">토지이용계획도 지도</div>
-      <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:2px">지도를 눌러 지점을 찍으세요 · 마커를 눌러 선택</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:2px">지도를 눌러 건물을 찍으세요 · 마커를 눌러 선택</div>
     </div>
     <div style="position:relative;flex:1;min-height:0">
       <div id="map" style="position:absolute;inset:0"></div>
@@ -151,19 +151,19 @@
         <div id="btn-recenter" style="cursor:pointer;background:rgba(8,9,11,.85);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.14);border-radius:11px;padding:9px 13px;font-size:12px;font-weight:700">내 위치로</div>
         <div id="btn-clear" style="cursor:pointer;background:rgba(8,9,11,.85);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.14);border-radius:11px;padding:9px 13px;font-size:12px;font-weight:700;color:rgba(255,255,255,.7)">전체 삭제</div>
       </div>
-      <div id="point-count-box" style="position:absolute;right:12px;bottom:14px;background:rgba(8,9,11,.85);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.14);border-radius:11px;padding:9px 13px;font-size:12px;font-weight:800;z-index:500">지점 0개</div>
+      <div id="point-count-box" style="position:absolute;right:12px;bottom:14px;background:rgba(8,9,11,.85);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.14);border-radius:11px;padding:9px 13px;font-size:12px;font-weight:800;z-index:500">건물 0개</div>
     </div>
   </section>
 
-  <!-- ══ 지점 목록 ══ -->
+  <!-- ══ 건물 목록 ══ -->
   <section id="sec-list" style="position:absolute;z-index:1;inset:0 0 62px 0;flex-direction:column;background:#0a0b0d;display:none">
     <div style="padding:14px 16px 10px;border-bottom:1px solid rgba(255,255,255,.07)">
-      <div style="font-size:17px;font-weight:800">저장된 지점</div>
+      <div style="font-size:17px;font-weight:800">저장된 건물</div>
       <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:2px">그룹별 · 내 위치 기준 거리·방위</div>
     </div>
     <div style="flex:1;overflow-y:auto;padding:12px 14px 24px">
       <div id="points-list"></div>
-      <div id="points-empty" style="display:none;text-align:center;padding:50px 20px;color:rgba(255,255,255,.4);font-size:13px">아직 지점이 없습니다.<br>지도 화면에서 원하는 위치를 눌러 추가하세요.</div>
+      <div id="points-empty" style="display:none;text-align:center;padding:50px 20px;color:rgba(255,255,255,.4);font-size:13px">아직 건물이 없습니다.<br>지도 화면에서 원하는 위치를 눌러 추가하세요.</div>
     </div>
   </section>
 
@@ -222,7 +222,7 @@
     <div id="pwa-card-sheet" style="position:absolute;left:0;right:0;bottom:0;max-height:88%;overflow-y:auto;background:#0d0e12;border-top:1px solid rgba(255,255,255,.1);border-radius:20px 20px 0 0;padding:8px 18px calc(18px + env(safe-area-inset-bottom));box-shadow:0 -12px 44px rgba(0,0,0,.65);animation:sheetup .28s cubic-bezier(.2,.8,.2,1)"></div>
   </div>
 
-  <!-- ══ 지점 추가/편집 시트 ══ -->
+  <!-- ══ 건물 추가/편집 시트 ══ -->
   <div id="point-sheet" style="position:absolute;inset:0;z-index:75;display:none">
     <div id="point-sheet-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,.58);animation:fadein .2s ease"></div>
     <div id="point-sheet-card" style="position:absolute;left:0;right:0;bottom:0;max-height:90%;overflow-y:auto;background:#0d0e12;border-top:1px solid rgba(255,255,255,.1);border-radius:20px 20px 0 0;padding:8px 18px calc(20px + env(safe-area-inset-bottom));box-shadow:0 -12px 44px rgba(0,0,0,.65);animation:sheetup .28s cubic-bezier(.2,.8,.2,1)"></div>
@@ -240,7 +240,7 @@
     </div>
     <div id="tab-list" data-tab="list" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:rgba(255,255,255,.5)">
       <div style="width:22px;height:22px;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="5" cy="7" r="1.6" fill="currentColor"/><circle cx="5" cy="12.5" r="1.6" fill="currentColor"/><circle cx="5" cy="18" r="1.6" fill="currentColor"/><path d="M10 7h10M10 12.5h10M10 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
-      <div style="font-size:10px;font-weight:700">지점</div>
+      <div style="font-size:10px;font-weight:700">건물</div>
     </div>
     <div id="tab-gallery" data-tab="gallery" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:rgba(255,255,255,.5)">
       <div style="width:22px;height:22px;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="3" stroke="currentColor" stroke-width="2"/><circle cx="9" cy="9.5" r="1.6" fill="currentColor"/><path d="M5 17l4.5-4 3 2.5L16 11l3 3.5" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></div>
@@ -311,13 +311,13 @@
   var CMP_SVG = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#fff" stroke-width="2"/><path d="M12 12l4-6-2 8-6 2 4-4z" fill="#fff"/></svg>';
 
   // ── 로컬 저장 ──
-  // 지점·그룹은 이제 서버(공유)가 원본. localStorage는 오프라인/최초 페인트용 캐시로만 쓴다.
+  // 건물·그룹은 이제 서버(공유)가 원본. localStorage는 오프라인/최초 페인트용 캐시로만 쓴다.
   // 그룹 '숨김'(눈 아이콘)은 기기별 보기 설정이라 서버가 아닌 로컬에 남긴다.
   function load(key, def) { try { var v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch (e) { return def; } }
   function save(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {} }
 
   // ── 서버 공유 저장소 API ──
-  // 지점/그룹을 서버에 저장해 모든 기기가 같은 목록을 본다. ID는 서버가 발급한다.
+  // 건물/그룹을 서버에 저장해 모든 기기가 같은 목록을 본다. ID는 서버가 발급한다.
   var API_BASE = '/api';
   var API_KEY = '';   // docker-compose의 WRITE_KEY를 켤 때만 같은 값으로 채운다(기본: 공개, 미사용).
   var api = {
@@ -419,7 +419,7 @@
       cameraOn: false,
       toast: null,
       viewer: null,
-      sheet: null,                  // 지점 추가/편집 시트 상태
+      sheet: null,                  // 건물 추가/편집 시트 상태
       selectMode: false,            // 사진 선택 모드(다운로드/삭제)
       selected: {},                 // { photoId: true } — 선택된 서버 사진
     },
@@ -463,10 +463,10 @@
   app._setOnline = function (ok) {
     if (this._isOnline === ok) return;
     this._isOnline = ok;
-    if (!ok) this.flash('서버 연결 안 됨 — 캐시된 지점을 표시 중');
+    if (!ok) this.flash('서버 연결 안 됨 — 캐시된 건물을 표시 중');
   };
 
-  // 서버에서 최신 지점/그룹을 받아 화면에 반영. force면 ETag 무시(항상 200).
+  // 서버에서 최신 건물/그룹을 받아 화면에 반영. force면 ETag 무시(항상 200).
   app.pull = function (force) {
     var self = this;
     var seq = ++this._pullSeq;
@@ -520,13 +520,13 @@
     window.addEventListener('online', function () { self.pull(false).catch(function () {}); self.pullPhotos(false).catch(function () {}); self.flush(); });
   };
 
-  // 이 앱을 서버 도입 전부터 쓰던 기기의 로컬 지점을 1회만 서버로 이관(서버가 비어 있을 때만).
+  // 이 앱을 서버 도입 전부터 쓰던 기기의 로컬 건물을 1회만 서버로 이관(서버가 비어 있을 때만).
   app._maybeMigrate = function () {
     var self = this;
     if (localStorage.getItem('arcam_migrated_v1')) return;
     // 중요: 첫 pull(true)이 이미 LS 캐시를 서버값([])으로 덮었으므로, 로컬 원본은 반드시
     // 모듈 로드 시 캡처해 둔 savedPoints/savedGroups 스냅샷에서 읽는다. (캐시를 다시 읽으면
-    // 빈 배열이 나와 이관이 건너뛰어지고 기존 지점이 영구 유실된다 — 리뷰에서 발견된 치명 버그.)
+    // 빈 배열이 나와 이관이 건너뛰어지고 기존 건물이 영구 유실된다 — 리뷰에서 발견된 치명 버그.)
     var lp = savedPoints || [], lg = savedGroups || [];
     var mark = function () { try { localStorage.setItem('arcam_migrated_v1', '1'); } catch (e) {} };
     if (this.state.points.length === 0 && this.state.groups.length === 0 && (lp.length || lg.length)) {
@@ -539,9 +539,9 @@
           (r.groups || []).forEach(function (g, i) { if (g && g.id != null && lg[i] && lg[i].visible === false) hiddenGroups[g.id] = true; });
           save(LS.hidden, hiddenGroups);
           self.setState({ points: r.points || [], groups: r.groups || [] });
-          self.flash('기존 지점을 서버로 옮겼어요');
+          self.flash('기존 건물을 서버로 옮겼어요');
         }
-      }).catch(function () { self.flash('기존 지점 이관 실패 — 다음 접속 때 다시 시도합니다'); });
+      }).catch(function () { self.flash('기존 건물 이관 실패 — 다음 접속 때 다시 시도합니다'); });
     } else {
       mark();
     }
@@ -929,9 +929,9 @@
     if (!g) return;   // 위치 미확보 시 파란 점 없음
     L.marker([g.lat, g.lon], { icon: L.divIcon({ className: '', html: '<div style="width:16px;height:16px;border-radius:50%;background:#2f80ff;border:3px solid #fff;box-shadow:0 0 0 4px rgba(47,128,255,.3)"></div>', iconSize: [16, 16], iconAnchor: [8, 8] }) }).addTo(this._locLayer);
   };
-  // ── 지점 추가/편집 시트 ──
+  // ── 건물 추가/편집 시트 ──
   app.openPointSheet = function (p) {
-    // p: 지도 클릭 시 {lat,lon}(신규) 또는 기존 지점 객체(편집)
+    // p: 지도 클릭 시 {lat,lon}(신규) 또는 기존 건물 객체(편집)
     var isEdit = p && p.id != null;
     this._sheetFocused = false;
     this.setState({ sheet: {
@@ -972,26 +972,26 @@
     var sh = this.state.sheet; if (!sh) return;
     var name = (sh.name || '').trim();
     var self = this;
-    this._lastGroupId = sh.groupId;   // 다음 신규 지점의 기본 그룹으로 기억
-    // 이름은 서버가 채운다: 신규는 빈 이름이면 '지점 N', 편집은 빈 이름이면 기존 이름 유지.
+    this._lastGroupId = sh.groupId;   // 다음 신규 건물의 기본 그룹으로 기억
+    // 이름은 서버가 채운다: 신규는 빈 이름이면 '건물 N', 편집은 빈 이름이면 기존 이름 유지.
     // 성공했을 때만 시트를 닫아, 실패(오프라인 등) 시 입력(이름·그룹·색, 신규는 지도에서 찍은 좌표)을 보존한다.
     var done = function (ok) { if (ok) self.setState({ sheet: null }); };
     if (sh.mode === 'edit') {
       var eid = sh.id, eg = sh.groupId, ec = sh.color;
-      this.mutate(function () { return api.updatePoint(eid, { name: name, groupId: eg, color: ec }); }, '지점 수정됨').then(done);
+      this.mutate(function () { return api.updatePoint(eid, { name: name, groupId: eg, color: ec }); }, '건물 수정됨').then(done);
     } else {
       var body = { name: name, lat: sh.lat, lon: sh.lon, groupId: sh.groupId, color: sh.color };
-      this.mutate(function () { return api.createPoint(body); }, '지점 추가됨').then(done);
+      this.mutate(function () { return api.createPoint(body); }, '건물 추가됨').then(done);
     }
   };
   app.deleteFromSheet = function () {
     var sh = this.state.sheet; if (!sh || sh.id == null) return;
     var id = sh.id, self = this;
-    this.mutate(function () { return api.deletePoint(id); }, '지점 삭제됨').then(function (ok) { if (ok) self.setState({ sheet: null }); });
+    this.mutate(function () { return api.deletePoint(id); }, '건물 삭제됨').then(function (ok) { if (ok) self.setState({ sheet: null }); });
   };
   app.deletePointConfirm = function (id) {
     var p = this.state.points.find(function (x) { return x.id === id; }); if (!p) return;
-    if (window.confirm('“' + p.name + '” 지점을 삭제할까요?')) this.mutate(function () { return api.deletePoint(id); });
+    if (window.confirm('“' + p.name + '” 건물을 삭제할까요?')) this.mutate(function () { return api.deletePoint(id); });
   };
   // ── 그룹 관리(목록 화면) ──
   app.addGroup = function () {
@@ -1019,9 +1019,9 @@
   };
   app.deleteGroup = function (id) {
     var g = this.groupById(id); if (!g) return;
-    if (!window.confirm('“' + g.name + '” 그룹을 삭제할까요?\n(그룹의 지점은 삭제되지 않고 “그룹 없음”으로 이동합니다)')) return;
+    if (!window.confirm('“' + g.name + '” 그룹을 삭제할까요?\n(그룹의 건물은 삭제되지 않고 “그룹 없음”으로 이동합니다)')) return;
     if (hiddenGroups[id]) { delete hiddenGroups[id]; save(LS.hidden, hiddenGroups); }
-    this.mutate(function () { return api.deleteGroup(id); });   // 서버가 지점을 '그룹 없음'으로 이동
+    this.mutate(function () { return api.deleteGroup(id); });   // 서버가 건물을 '그룹 없음'으로 이동
   };
   app.recenter = function () {
     if (!this._map) return;
@@ -1043,7 +1043,7 @@
       return { overlayOn: on };
     });
   };
-  app.clearDraw = function () { var self = this; if (window.confirm('모든 지점을 삭제할까요?')) this.mutate(function () { return api.clearPoints(); }); };
+  app.clearDraw = function () { var self = this; if (window.confirm('모든 건물을 삭제할까요?')) this.mutate(function () { return api.clearPoints(); }); };
 
   // ── AR 핀 계산 (실측 위치 + 보간된 헤딩 기준) ──
   app.computePins = function () {
@@ -1058,7 +1058,7 @@
       var color = self.effColor(p);
       if (Math.abs(rel) <= half) {
         var scale = Math.max(0.68, Math.min(1.18, 1.15 - d / 2000));
-        var lane = ((p.id % 3) + 3) % 3;   // 지점별 고정 세로 위치(집합 변화에도 튀지 않게)
+        var lane = ((p.id % 3) + 3) % 3;   // 건물별 고정 세로 위치(집합 변화에도 튀지 않게)
         pins.push({ id: p.id, name: p.name, color: color, distLabel: distLabel, dirLabel: dirLabel,
           left: (50 + rel / half * 50), top: (42 + lane * 9), scale: scale });
       } else {
@@ -1133,9 +1133,9 @@
       if (arHint) {
         var m = !g ? '위치(GPS)를 확인하는 중입니다…' : '기기를 8자로 움직여 나침반을 보정해 주세요';
         if (S.perms.location === 'denied') m = '위치 권한이 필요합니다 · 설정 탭에서 허용';
-        else if (S.perms.location === 'idle') m = '위치 권한을 허용하면 지점이 표시됩니다';
+        else if (S.perms.location === 'idle') m = '위치 권한을 허용하면 건물이 표시됩니다';
         else if (S.perms.orientation === 'denied') m = '방향(나침반) 권한이 필요합니다 · 설정 탭에서 허용';
-        else if (this._rawHeading == null && S.perms.orientation === 'idle') m = '방향(나침반) 권한을 허용하면 지점이 표시됩니다';
+        else if (this._rawHeading == null && S.perms.orientation === 'idle') m = '방향(나침반) 권한을 허용하면 건물이 표시됩니다';
         arHint.textContent = m; arHint.style.display = 'block';
       }
       return;
@@ -1334,9 +1334,9 @@
     setText('opacity-pct', Math.round(S.opacity * 100) + '%');
     var opr = $('opacity-range'); if (opr) opr.value = S.opacity;
     setText('overlay-status', S.overlayStatus);
-    setText('point-count-box', '지점 ' + S.points.length + '개');
+    setText('point-count-box', '건물 ' + S.points.length + '개');
 
-    // 지점 목록(그룹별)
+    // 건물 목록(그룹별)
     this.renderList(g);
 
     // 갤러리 툴바(선택/다운로드/삭제)
@@ -1393,8 +1393,8 @@
     }
     var permCards = [
       mk(CAM_SVG, 'rgba(166,7,57,.3)', '카메라', '실시간 화면 위에 AR 정보를 겹쳐 보여주고 사진에 함께 저장합니다.', S.perms.camera, '카메라 허용', 'camera'),
-      mk(LOC_SVG, 'rgba(47,111,224,.3)', '위치(GPS)', '현재 위치와 각 지점 사이의 거리를 계산합니다.', S.perms.location, '위치 허용', 'location'),
-      mk(CMP_SVG, 'rgba(224,160,32,.3)', '방향(나침반)', '기기가 향한 방위를 읽어 지점을 화면의 올바른 방향에 배치합니다.', S.perms.orientation, '방향 허용', 'orientation'),
+      mk(LOC_SVG, 'rgba(47,111,224,.3)', '위치(GPS)', '현재 위치와 각 건물 사이의 거리를 계산합니다.', S.perms.location, '위치 허용', 'location'),
+      mk(CMP_SVG, 'rgba(224,160,32,.3)', '방향(나침반)', '기기가 향한 방위를 읽어 건물을 화면의 올바른 방향에 배치합니다.', S.perms.orientation, '방향 허용', 'orientation'),
     ];
     setHTML('perm-cards', permCards.map(function (c) {
       return '<div style="background:#111317;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:15px">' +
@@ -1417,11 +1417,11 @@
     var vi = $('viewer-img');
     if (vi) { var vs = viewer ? (API_BASE + '/photos/' + viewer.id) : ''; if (vi.src.slice(-vs.length) !== vs || !vs) vi.src = vs; }
 
-    // 지점 추가/편집 시트
+    // 건물 추가/편집 시트
     this.renderSheet();
   };
 
-  // ── 지점 목록: 그룹 헤더 + 지점 카드 ──
+  // ── 건물 목록: 그룹 헤더 + 건물 카드 ──
   app.renderList = function (g) {
     var self = this, S = this.state;
     var html = '<div style="display:flex;justify-content:flex-end;margin-bottom:2px">' +
@@ -1445,7 +1445,7 @@
           '<div data-act="gdelete" data-gid="' + grp.id + '" style="cursor:pointer;padding:4px 5px;color:rgba(255,120,120,.7);font-size:16px">×</div>';
       }
       html += '</div>';
-      if (pts.length === 0) { html += '<div style="font-size:12px;color:rgba(255,255,255,.35);padding:2px 4px 4px">지점이 없습니다</div>'; }
+      if (pts.length === 0) { html += '<div style="font-size:12px;color:rgba(255,255,255,.35);padding:2px 4px 4px">건물이 없습니다</div>'; }
       pts.forEach(function (p) {
         var pcol = self.effColor(p);
         var coords = p.lat.toFixed(5) + ', ' + p.lon.toFixed(5);
@@ -1466,7 +1466,7 @@
     setStyle('points-empty', 'display', (S.points.length === 0 && S.groups.length === 0) ? 'block' : 'none');
   };
 
-  // ── 지점 추가/편집 시트 렌더 ──
+  // ── 건물 추가/편집 시트 렌더 ──
   app.renderSheet = function () {
     var sh = this.state.sheet, wrap = $('point-sheet');
     if (!wrap) return;
@@ -1498,9 +1498,9 @@
     }
     $('point-sheet-card').innerHTML =
       '<div style="width:38px;height:4px;border-radius:2px;background:rgba(255,255,255,.2);margin:6px auto 16px"></div>' +
-      '<div style="font-size:17px;font-weight:900;margin-bottom:2px">' + (sh.mode === 'edit' ? '지점 편집' : '새 지점') + '</div>' +
+      '<div style="font-size:17px;font-weight:900;margin-bottom:2px">' + (sh.mode === 'edit' ? '건물 편집' : '새 건물') + '</div>' +
       '<div style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:14px">' + sh.lat.toFixed(5) + ', ' + sh.lon.toFixed(5) + '</div>' +
-      '<input id="psheet-name" type="text" placeholder="지점 이름" value="' + esc(sh.name || '') + '" style="width:100%;background:#111317;border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:13px 14px;font-size:15px;font-weight:600;color:#f4f4f5;outline:none">' +
+      '<input id="psheet-name" type="text" placeholder="건물 이름" value="' + esc(sh.name || '') + '" style="width:100%;background:#111317;border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:13px 14px;font-size:15px;font-weight:600;color:#f4f4f5;outline:none">' +
       '<div style="font-size:12px;color:rgba(255,255,255,.5);margin:14px 2px 8px;font-weight:700">그룹</div>' +
       '<div style="display:flex;gap:8px;flex-wrap:wrap">' + groupsChips + '</div>' +
       colorRow +
@@ -1541,7 +1541,7 @@
     $('viewer-close').addEventListener('click', function () { app.setState({ viewer: null }); });
     $('viewer-delete').addEventListener('click', function () { if (app.state.viewer != null) app.deletePhoto(app.state.viewer); });
 
-    // 목록 (위임) — 지점 편집/삭제 + 그룹 관리
+    // 목록 (위임) — 건물 편집/삭제 + 그룹 관리
     $('points-list').addEventListener('click', function (e) {
       var t = e.target.closest('[data-act]'); if (!t) return;
       var act = t.getAttribute('data-act');
@@ -1555,7 +1555,7 @@
       else if (act === 'gvis') app.toggleGroup(gid);
       else if (act === 'gcolor') app.cycleGroupColor(gid);
     });
-    // 지점 추가/편집 시트 (위임)
+    // 건물 추가/편집 시트 (위임)
     $('point-sheet-card').addEventListener('click', function (e) {
       var t = e.target.closest('[data-act]'); if (!t) return;
       var act = t.getAttribute('data-act');
@@ -1609,7 +1609,7 @@
     app.initMapWhenReady();
     app.attachOrientation(true);
     app.startAR();   // AR 렌더 루프 시작(현재 탭이 카메라)
-    app.startSync();  // 서버에서 공유 지점/그룹 동기화 시작(+주기 폴링)
+    app.startSync();  // 서버에서 공유 건물/그룹 동기화 시작(+주기 폴링)
     if (navigator.permissions && navigator.permissions.query) {
       // 이전에 허용한 권한은 자동으로 다시 켜서, 열자마자 실제 화면·위치가 나오게 한다.
       navigator.permissions.query({ name: 'geolocation' }).then(function (p) {

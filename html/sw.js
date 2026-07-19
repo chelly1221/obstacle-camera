@@ -70,7 +70,7 @@ function isMapTile(url) {
 }
 
 function isApi(url) {
-  // 공유 지점/그룹 API(/api/*)는 절대 캐시하지 않는다. 캐시하면 서버 공유 상태가 낡아
+  // 공유 건물/그룹 API(/api/*)는 절대 캐시하지 않는다. 캐시하면 서버 공유 상태가 낡아
   // 남의 변경이 안 보이고 내가 방금 저장한 것도 잠시 사라진 것처럼 보인다(ETag/폴링 무력화).
   return url.origin === self.location.origin && url.pathname.indexOf('/api/') === 0;
 }

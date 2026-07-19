@@ -1,6 +1,6 @@
 'use strict';
-// 토지이용 AR — 지점/그룹 공유 저장소.
-// 의존성 없는 Node HTTP 서버. 지점·그룹을 원자적 JSON 파일 하나에 저장해
+// 토지이용 AR — 건물/그룹 공유 저장소.
+// 의존성 없는 Node HTTP 서버. 건물·그룹을 원자적 JSON 파일 하나에 저장해
 // 모든 기기가 같은 목록을 보게 한다. ID는 서버가 발급(기기 간 충돌 방지),
 // rev/ETag로 저렴한 폴링을 지원. 접근 제어 없음(공개) — 검증·상한으로만 보호.
 //
@@ -22,10 +22,10 @@ const WRITE_KEY = process.env.WRITE_KEY || '';   // 비어 있으면 쓰기 공�
 const MAX_POINTS = 10000;
 const MAX_GROUPS = 500;
 const MAX_NAME = 80;
-const MAX_BODY = 8 << 20;   // 8 MB — 수천 개 지점 이관(import)도 통과하도록 넉넉히
+const MAX_BODY = 8 << 20;   // 8 MB — 수천 개 건물 이관(import)도 통과하도록 넉넉히
 const PALETTE_OK = /^#[0-9a-fA-F]{6}$/;
 
-// 사진 저장 경로·상한. 사진은 지점/그룹(store.json)과 완전히 분리해 저장한다.
+// 사진 저장 경로·상한. 사진은 건물/그룹(store.json)과 완전히 분리해 저장한다.
 const DATA_DIR = path.dirname(DATA_FILE);
 const PHOTO_DIR = path.join(DATA_DIR, 'photos');
 const PHOTO_INDEX = path.join(DATA_DIR, 'photos.json');
@@ -92,7 +92,7 @@ function persist() {
 
 // ── 사진 저장소(메타 색인 + 개별 JPEG 파일) ──
 // 원본/썸네일 JPEG은 파일로(/data/photos/<id>.jpg, <id>.t.jpg), 메타데이터 색인만
-// photos.json에 둔다. 이렇게 하면 지점 저장(잦은 원자적 재기록)이 대용량 이미지로
+// photos.json에 둔다. 이렇게 하면 건물 저장(잦은 원자적 재기록)이 대용량 이미지로
 // 느려지거나 위험해지지 않는다. id는 서버가 발급(단조 증가, 재사용 없음).
 let photos = { list: [], seq: 0, rev: 1 };   // list: [{ id, ts, w, h, bytes }]
 
@@ -117,7 +117,7 @@ async function writeFileDurable(target, data) {
   await fsp.rename(tmp, target);
 }
 
-let photoChain = Promise.resolve();   // 색인 쓰기 직렬화(지점 store와 독립)
+let photoChain = Promise.resolve();   // 색인 쓰기 직렬화(건물 store와 독립)
 function persistPhotos() {
   const snap = JSON.stringify({ list: photos.list, seq: photos.seq, rev: photos.rev });
   const p = photoChain.then(() => writeFileDurable(PHOTO_INDEX, snap));
@@ -326,7 +326,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   try {
-    // ── 지점 ──
+    // ── 건물 ──
     if (parts[0] === 'points') {
       // 전체 삭제
       if (method === 'POST' && parts[1] === 'clear') {
@@ -341,7 +341,7 @@ const server = http.createServer(async (req, res) => {
         const id = ++store.seqPoint;
         const point = {
           id,
-          name: cleanName(b.name, '지점 ' + id),
+          name: cleanName(b.name, '건물 ' + id),
           lat: b.lat, lon: b.lon,
           groupId: normGroupId(b.groupId),
           color: cleanColor(b.color, '#a60739'),
@@ -403,7 +403,7 @@ const server = http.createServer(async (req, res) => {
           const idx = store.groups.findIndex((g) => g.id === id);
           if (idx < 0) return send(res, 404, { error: 'not found' });
           store.groups.splice(idx, 1);
-          // 삭제된 그룹의 지점은 '그룹 없음'으로 이동
+          // 삭제된 그룹의 건물은 '그룹 없음'으로 이동
           store.points = store.points.map((p) => p.groupId === id ? Object.assign({}, p, { groupId: null }) : p);
           bump(); await persist();
           return send(res, 200, { ok: true, rev: store.rev });
@@ -492,7 +492,7 @@ const server = http.createServer(async (req, res) => {
         const id = ++store.seqPoint;
         const oldG = p.groupId;
         const newG = (oldG != null && gmap[oldG] != null) ? gmap[oldG] : null;
-        store.points.push({ id, name: cleanName(p.name, '지점 ' + id), lat: p.lat, lon: p.lon, groupId: newG, color: cleanColor(p.color, '#a60739') });
+        store.points.push({ id, name: cleanName(p.name, '건물 ' + id), lat: p.lat, lon: p.lon, groupId: newG, color: cleanColor(p.color, '#a60739') });
       });
       bump(); await persist();
       return send(res, 200, Object.assign({ imported: true }, stateBody()));
