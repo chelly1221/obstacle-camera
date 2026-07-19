@@ -1,0 +1,5 @@
+.DS_Store
+*.log
+
+# deployment-only local overrides, if any are added later
+docker-compose.override.yml
