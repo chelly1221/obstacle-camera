@@ -62,26 +62,26 @@
   <!-- ══ AR 카메라 화면 ══ -->
   <section id="sec-ar" style="position:absolute;inset:0 0 62px 0;overflow:hidden;background:#0a0b0d;display:block">
     <video id="video" autoplay playsinline muted style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0"></video>
-    <!-- 데모 배경 -->
-    <div id="backdrop" style="position:absolute;inset:0;opacity:1;background:linear-gradient(#243b57 0%,#3f5f80 34%,#7d94ac 52%,#59606a 54%,#31363d 100%)">
-      <div style="position:absolute;left:8%;top:34%;width:64px;height:120px;background:rgba(28,32,40,.72);border-top:3px solid rgba(255,255,255,.06)"></div>
-      <div style="position:absolute;left:26%;top:28%;width:52px;height:180px;background:rgba(20,24,32,.78)"></div>
-      <div style="position:absolute;right:30%;top:38%;width:70px;height:110px;background:rgba(30,34,42,.7)"></div>
-      <div style="position:absolute;right:7%;top:24%;width:58px;height:200px;background:rgba(18,22,30,.8)"></div>
-      <div style="position:absolute;left:0;right:0;bottom:0;height:46%;background:repeating-linear-gradient(90deg,rgba(0,0,0,.12) 0 40px,rgba(255,255,255,.03) 40px 80px)"></div>
+    <!-- 카메라 꺼짐 안내 (권한 전/거부 시) -->
+    <div id="backdrop" style="position:absolute;inset:0;opacity:1;background:radial-gradient(120% 90% at 50% 20%,#14161c 0%,#0a0b0d 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:32px;text-align:center">
+      <div style="width:64px;height:64px;border-radius:18px;background:rgba(166,7,57,.18);border:1px solid rgba(166,7,57,.45);display:flex;align-items:center;justify-content:center">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="13" rx="3" stroke="#e5688f" stroke-width="2"/><circle cx="12" cy="12.5" r="3.2" stroke="#e5688f" stroke-width="2"/><path d="M8 6l1.5-2h5L16 6" stroke="#e5688f" stroke-width="2" stroke-linejoin="round"/></svg>
+      </div>
+      <div style="font-size:15px;font-weight:800;color:#f4f4f5;line-height:1.5">카메라를 켜면 실제 화면 위에<br>설정한 지점이 겹쳐 표시됩니다</div>
+      <div id="backdrop-cam" style="cursor:pointer;background:#a60739;border-radius:12px;padding:12px 22px;font-size:14px;font-weight:800;color:#fff">카메라 켜기</div>
+      <div id="backdrop-hint" style="font-size:12px;color:rgba(255,255,255,.5);line-height:1.5;max-width:260px"></div>
     </div>
 
     <!-- 상단 상태칩 + 나침반 -->
     <div style="position:absolute;left:0;right:0;top:0;padding:14px 14px 30px;background:linear-gradient(rgba(0,0,0,.55),transparent)">
       <div style="display:flex;gap:6px;align-items:center">
         <div style="display:flex;align-items:center;gap:5px;background:rgba(0,0,0,.42);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 10px;font-size:11px;font-weight:600">
-          <span id="gps-dot" style="width:7px;height:7px;border-radius:50%;background:#e0a020"></span>GPS&nbsp;<span id="gps-label">데모</span>
+          <span id="gps-dot" style="width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.4)"></span>GPS&nbsp;<span id="gps-label">대기</span>
         </div>
         <div style="display:flex;align-items:center;gap:5px;background:rgba(0,0,0,.42);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 10px;font-size:11px;font-weight:600">
-          <span id="comp-dot" style="width:7px;height:7px;border-radius:50%;background:#e0a020"></span>나침반
+          <span id="comp-dot" style="width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.4)"></span>나침반
         </div>
         <div style="flex:1"></div>
-        <div id="mode-chip" style="cursor:pointer;background:rgba(224,160,32,.22);backdrop-filter:blur(8px);border:1px solid rgba(224,160,32,.5);border-radius:999px;padding:5px 11px;font-size:11px;font-weight:700;color:#e0a020">데모 모드</div>
       </div>
       <!-- 나침반 밴드 -->
       <div id="compass-band" style="margin-top:12px;position:relative;height:26px;display:block;overflow:hidden">
@@ -96,17 +96,14 @@
     <!-- 화면밖 지점 화살표 -->
     <div id="arrows"></div>
 
+    <!-- AR 안내(위치·나침반 대기) -->
+    <div id="ar-hint" style="position:absolute;left:50%;top:60%;transform:translate(-50%,-50%);z-index:6;display:none;background:rgba(6,7,9,.72);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:10px 14px;font-size:12.5px;font-weight:700;color:#fff;text-align:center;max-width:80%"></div>
+
     <!-- 중앙 크로스헤어 -->
     <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;pointer-events:none">
       <div style="width:38px;height:38px;border:1.5px solid rgba(255,255,255,.5);border-radius:50%"></div>
       <div style="position:absolute;left:50%;top:50%;width:2px;height:12px;background:rgba(255,255,255,.6);transform:translate(-50%,-50%)"></div>
       <div style="position:absolute;left:50%;top:50%;width:12px;height:2px;background:rgba(255,255,255,.6);transform:translate(-50%,-50%)"></div>
-    </div>
-
-    <!-- 데모 헤딩 컨트롤 -->
-    <div id="demo-ctrl" style="position:absolute;left:14px;right:14px;bottom:118px;display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.5);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:9px 13px">
-      <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.7);white-space:nowrap">방향 회전</span>
-      <input id="heading-range" type="range" min="0" max="359" value="30" style="flex:1;height:18px">
     </div>
 
     <!-- 촬영 버튼 -->
@@ -158,10 +155,10 @@
   <section id="sec-list" style="position:absolute;inset:0 0 62px 0;flex-direction:column;background:#0a0b0d;display:none">
     <div style="padding:14px 16px 10px;border-bottom:1px solid rgba(255,255,255,.07)">
       <div style="font-size:17px;font-weight:800">저장된 지점</div>
-      <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:2px">내 위치 기준 거리 · 방위</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:2px">그룹별 · 내 위치 기준 거리·방위</div>
     </div>
-    <div style="flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:9px">
-      <div id="points-list" style="display:flex;flex-direction:column;gap:9px"></div>
+    <div style="flex:1;overflow-y:auto;padding:12px 14px 24px">
+      <div id="points-list"></div>
       <div id="points-empty" style="display:none;text-align:center;padding:50px 20px;color:rgba(255,255,255,.4);font-size:13px">아직 지점이 없습니다.<br>지도 화면에서 원하는 위치를 눌러 추가하세요.</div>
     </div>
   </section>
@@ -185,15 +182,6 @@
       <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:2px">실시간 AR을 쓰려면 아래 권한이 필요합니다</div>
     </div>
     <div style="padding:14px;display:flex;flex-direction:column;gap:11px">
-      <div id="demo-card" style="display:flex;align-items:center;justify-content:space-between;background:rgba(224,160,32,.12);border:1px solid rgba(224,160,32,.4);border-radius:16px;padding:15px">
-        <div style="flex:1;padding-right:12px">
-          <div style="font-size:14px;font-weight:800">데모 모드</div>
-          <div style="font-size:12px;color:rgba(255,255,255,.55);margin-top:3px;line-height:1.45">가상 위치(서울시청)와 방향으로 AR을 미리 봅니다. 실기기에서 권한을 허용하면 자동으로 실측 모드로 전환됩니다.</div>
-        </div>
-        <div id="demo-toggle2" style="cursor:pointer;width:46px;height:27px;border-radius:999px;background:#e0a020;position:relative;flex-shrink:0">
-          <div id="demo-knob2" style="position:absolute;top:3px;left:22px;width:21px;height:21px;border-radius:50%;background:#fff;transition:.15s"></div>
-        </div>
-      </div>
       <div id="pwa-install-card" style="display:none;cursor:pointer;align-items:center;gap:12px;background:#111317;border:1px solid rgba(166,7,57,.4);border-radius:16px;padding:15px">
         <div style="width:38px;height:38px;border-radius:11px;background:rgba(166,7,57,.28);display:flex;align-items:center;justify-content:center;flex-shrink:0">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 3v11m0 0l-4-4m4 4l4-4M5 20h14" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -229,6 +217,12 @@
     <div id="pwa-card-sheet" style="position:absolute;left:0;right:0;bottom:0;max-height:88%;overflow-y:auto;background:#0d0e12;border-top:1px solid rgba(255,255,255,.1);border-radius:20px 20px 0 0;padding:8px 18px calc(18px + env(safe-area-inset-bottom));box-shadow:0 -12px 44px rgba(0,0,0,.65);animation:sheetup .28s cubic-bezier(.2,.8,.2,1)"></div>
   </div>
 
+  <!-- ══ 지점 추가/편집 시트 ══ -->
+  <div id="point-sheet" style="position:absolute;inset:0;z-index:75;display:none">
+    <div id="point-sheet-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,.58);animation:fadein .2s ease"></div>
+    <div id="point-sheet-card" style="position:absolute;left:0;right:0;bottom:0;max-height:90%;overflow-y:auto;background:#0d0e12;border-top:1px solid rgba(255,255,255,.1);border-radius:20px 20px 0 0;padding:8px 18px calc(20px + env(safe-area-inset-bottom));box-shadow:0 -12px 44px rgba(0,0,0,.65);animation:sheetup .28s cubic-bezier(.2,.8,.2,1)"></div>
+  </div>
+
   <!-- ══ 하단 탭바 ══ -->
   <nav style="position:absolute;left:0;right:0;bottom:0;height:62px;background:rgba(8,9,11,.94);backdrop-filter:blur(14px);border-top:1px solid rgba(255,255,255,.09);display:flex;z-index:50">
     <div id="tab-ar" data-tab="ar" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:#a60739">
@@ -258,12 +252,15 @@
 (function () {
   'use strict';
 
-  // ── 상수(원본 DC props의 기본값) ──
+  // ── 상수 ──
   var ACCENT = '#a60739';
   var FOV = 62;
   var SHOW_COMPASS = true;
   var PAL = ['#a60739', '#e0a020', '#2f9e6f', '#2f6fe0', '#8b2fe0', '#d05a2a'];
-  var DEMO_GEO = { lat: 37.5665, lon: 126.9780, acc: 15 }; // 서울시청
+  // 헤딩 적응형 필터(One Euro): 정지 시 지터 억제, 회전 시 지연 최소화.
+  var ONE_EURO = { minCutoff: 0.45, beta: 0.12, dCutoff: 1.0 };
+  var DEFAULT_VIEW = { lat: 36.5, lon: 127.85, zoom: 7 }; // GPS 확보 전 지도 초기 위치(대한민국 전역)
+  var LS = { points: 'arcam_points_v1', groups: 'arcam_groups_v1', view: 'arcam_view_v1' };
 
   // VWorld 토지이용계획도 오버레이 키. 비워두면 원본 디자인과 동일하게 공개 프록시
   // (map.vworld.kr/proxy.do)를 씁니다 — 호출량 제한이 있어 간헐적으로 타일이 빌 수 있습니다.
@@ -284,31 +281,63 @@
   var LOC_SVG = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6.5 7-11a7 7 0 10-14 0c0 4.5 7 11 7 11z" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.4" stroke="#fff" stroke-width="2"/></svg>';
   var CMP_SVG = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#fff" stroke-width="2"/><path d="M12 12l4-6-2 8-6 2 4-4z" fill="#fff"/></svg>';
 
-  // ── 앱 상태 + 참조 (원본 Component의 state) ──
+  // ── 로컬 저장(지점·그룹은 새로고침 후에도 유지) ──
+  function load(key, def) { try { var v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch (e) { return def; } }
+  function save(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {} }
+
+  // One Euro 필터(각도용). 저속에선 강하게 평활(지터↓), 고속에선 약하게(지연↓).
+  function makeHeadingFilter() {
+    var xHat = null, dxHat = 0, tPrev = 0;
+    function wrap(a) { return ((a % 360) + 360) % 360; }
+    function diff(a, b) { return ((a - b + 540) % 360) - 180; }          // 최단 각도차 (-180,180]
+    function alpha(cutoff, dt) { var tau = 1 / (2 * Math.PI * cutoff); return 1 / (1 + tau / dt); }
+    return {
+      reset: function () { xHat = null; dxHat = 0; tPrev = 0; },
+      filter: function (x, t) {
+        if (xHat == null || !(t > tPrev)) { xHat = wrap(x); tPrev = t; dxHat = 0; return xHat; }
+        var dt = (t - tPrev) / 1000; tPrev = t;
+        if (dt <= 0 || dt > 1) dt = 1 / 60;
+        var dRaw = diff(x, xHat) / dt;                                    // 각속도(도/초)
+        dxHat = dxHat + alpha(ONE_EURO.dCutoff, dt) * (dRaw - dxHat);     // 평활된 각속도
+        var cutoff = ONE_EURO.minCutoff + ONE_EURO.beta * Math.abs(dxHat);
+        xHat = wrap(xHat + alpha(cutoff, dt) * diff(x, xHat));            // 각도 인식 저역통과
+        return xHat;
+      }
+    };
+  }
+  var savedPoints = load(LS.points, []);
+  var savedGroups = load(LS.groups, []);
+  var maxPid = savedPoints.reduce(function (m, p) { return Math.max(m, p.id || 0); }, 0);
+  var maxGid = savedGroups.reduce(function (m, g) { return Math.max(m, g.id || 0); }, 0);
+
+  // ── 앱 상태 + 참조 ──
   var app = {
     state: {
       tab: 'ar',
-      points: [
-        { id: 1, name: 'A동 신축예정지', lat: 37.5682, lon: 126.9772, color: '#a60739' },
-        { id: 2, name: 'B 근린상가', lat: 37.5651, lon: 126.9805, color: '#e0a020' },
-        { id: 3, name: '공원 정문', lat: 37.5648, lon: 126.9758, color: '#2f9e6f' },
-      ],
-      nextId: 4,
+      points: savedPoints,          // { id, name, lat, lon, groupId|null, color }
+      groups: savedGroups,          // { id, name, color, visible }
+      nextId: maxPid + 1,
+      nextGid: maxGid + 1,
       photos: [],
       opacity: 0.6,
       overlayOn: true,
       overlayStatus: '불러오는 중',
-      geo: null,
-      heading: 30,
-      realHeading: null,
+      geo: null,                    // 실측 GPS만 사용(최초 확보 전 null)
+      heading: null,                // 실측 나침반만 사용(최초 확보 전 null)
       perms: { camera: 'idle', location: 'idle', orientation: 'idle' },
-      demo: true,
       cameraOn: false,
       toast: null,
       viewer: null,
+      sheet: null,                  // 지점 추가/편집 시트 상태
     },
     _video: null, _mapEl: null, _map: null, _overlay: null, _markers: null, _locLayer: null,
-    _stream: null, _watch: null, _orientBound: false, _lastH: 0, _mapTry: 0, _ovErr: 0, _tt: null,
+    _stream: null, _watch: null, _orientBound: false, _mapTry: 0, _ovErr: 0, _tt: null,
+    // AR 렌더링(rAF): 지속 DOM 요소를 재사용해 깜박임 제거
+    _raf: null, _sh: 0, _rawHeading: null, _pinEls: {}, _arrowEls: {}, _tickEls: null,
+    _renderedPins: [], _didInitialRecenter: false, _lastGroupId: null, _sheetFocused: false,
+    // 헤딩 센서 융합: 나침반(절대 기준) + Generic Sensor(자이로·지자기 OS 융합) + One Euro 필터
+    _hf: null, _sensor: null, _sensorHeading: null, _compassHeading: null,
+    _hasAbsolute: false, _sensorAgree: 0, _sensorTrusted: false,
   };
 
   // ── setState: React setState의 얕은 병합 + 콜백 + componentDidUpdate ──
@@ -321,7 +350,13 @@
     this.state = next;
     this.render();
     if (this.state.tab === 'map' && this._map) { var self = this; setTimeout(function () { self._map.invalidateSize(); }, 80); }
-    if (prev.points !== this.state.points) this.refreshMarkers();
+    if (prev.points !== this.state.points || prev.groups !== this.state.groups) {
+      this.refreshMarkers();
+      if (prev.points !== this.state.points) save(LS.points, this.state.points);
+      if (prev.groups !== this.state.groups) save(LS.groups, this.state.groups);
+    }
+    if (prev.geo !== this.state.geo) this.drawLoc();
+    if (prev.tab !== this.state.tab) { this.state.tab === 'ar' ? this.startAR() : this.stopAR(); }
     if (cb) cb();
   };
 
@@ -341,10 +376,45 @@
   app.dirLabel = function (b) { return ['북', '북동', '동', '남동', '남', '남서', '서', '북서'][Math.round(b / 45) % 8]; };
   app.cardinal = function (h) { return ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.round(h / 45) % 8]; };
 
-  app.effGeo = function () { return (!this.state.demo && this.state.geo) ? this.state.geo : DEMO_GEO; };
-  app.effHeading = function () { return (!this.state.demo && this.state.realHeading != null) ? this.state.realHeading : this.state.heading; };
+  app.geo = function () { return this.state.geo; };
   app.fov = function () { return FOV; };
   app.accent = function () { return ACCENT; };
+  // 절대 방위 쿼터니언에서 후면 카메라(-Z)가 가리키는 나침반 방위 추출.
+  // 기준계 ENU(동=X, 북=Y, 상=Z), Hamilton 규약 가정. 관례가 다르면 _ingestHeading의
+  // 게이트가 나침반과 비교해 자동 폴백하므로 오해석 시에도 회귀 없음.
+  app._headingFromQuat = function (q) {
+    if (!q || q.length < 4) return null;
+    var x = q[0], y = q[1], z = q[2], w = q[3];
+    var east = -2 * (x * z + w * y);
+    var north = -2 * (y * z - w * x);
+    if (east === 0 && north === 0) return null;   // 화면이 하늘/땅을 정면 → 방위 불명
+    return (Math.atan2(east, north) * 180 / Math.PI + 360) % 360;
+  };
+  // 센서(부드러움)와 나침반(절대 기준)을 융합해 최종 _rawHeading 결정.
+  // 센서가 나침반과 지속적으로 크게 어긋나면 신뢰하지 않고 나침반을 쓴다.
+  app._ingestHeading = function () {
+    var s = this._sensorHeading, c = this._compassHeading;
+    if (s != null && c != null) {
+      var d = Math.abs(((s - c + 540) % 360) - 180);
+      if (d < 22) this._sensorAgree = Math.min(this._sensorAgree + 1, 30);
+      else this._sensorAgree = Math.max(this._sensorAgree - 2, 0);
+      this._sensorTrusted = this._sensorAgree >= 6;
+      this._rawHeading = this._sensorTrusted ? s : c;
+    } else if (s != null) {
+      this._rawHeading = s;              // 나침반 대기 중 잠정 사용
+    } else if (c != null) {
+      this._rawHeading = c;
+    } else { return; }
+    if (this.state.heading == null) {    // 최초 1회만 setState(칩 갱신) — 재렌더 폭주 방지
+      var hv = this._rawHeading;
+      this.setState(function (st) { return { heading: hv, perms: Object.assign({}, st.perms, { orientation: 'granted' }) }; });
+    }
+  };
+  // ── 그룹 / 색 유틸 ──
+  app.groupById = function (id) { var gs = this.state.groups; for (var i = 0; i < gs.length; i++) if (gs[i].id === id) return gs[i]; return null; };
+  app.effColor = function (p) { var g = p.groupId != null ? this.groupById(p.groupId) : null; return g ? g.color : (p.color || ACCENT); };
+  app.groupVisible = function (p) { var g = p.groupId != null ? this.groupById(p.groupId) : null; return g ? g.visible !== false : true; };
+  app.visiblePoints = function () { var self = this; return this.state.points.filter(function (p) { return self.groupVisible(p); }); };
 
   // ── 센서 ──
   app.requestLocation = function () {
@@ -355,8 +425,11 @@
     this._watch = navigator.geolocation.watchPosition(
       function (pos) {
         self.setState(function (s) {
-          return { geo: { lat: pos.coords.latitude, lon: pos.coords.longitude, acc: pos.coords.accuracy }, demo: false, perms: Object.assign({}, s.perms, { location: 'granted' }) };
-        }, function () { self.recenter(); });
+          return { geo: { lat: pos.coords.latitude, lon: pos.coords.longitude, acc: pos.coords.accuracy }, perms: Object.assign({}, s.perms, { location: 'granted' }) };
+        }, function () {
+          // 최초 1회만 지도를 내 위치로 이동. 이후엔 파란 점만 갱신하고 화면은 그대로 둔다.
+          if (!self._didInitialRecenter) { self._didInitialRecenter = true; self.recenter(); }
+        });
       },
       function () { self.setState(function (s) { return { perms: Object.assign({}, s.perms, { location: 'denied' }) }; }); },
       { enableHighAccuracy: true, maximumAge: 2000, timeout: 8000 }
@@ -376,19 +449,42 @@
   };
   app._bindOrient = function () {
     if (this._orientBound) return; this._orientBound = true;
-    this._lastH = 0;
+    this._bindDeviceOrientation();    // 나침반(절대) — 폴백이자 센서 검증 기준
+    this._startOrientationSensor();   // 자이로+지자기 OS 융합(있으면 우선)
+  };
+  // 절대 방위(나침반). deviceorientationabsolute / iOS webkitCompassHeading 우선.
+  // 절대 소스가 존재하면 상대 alpha(드리프트)는 무시한다.
+  app._bindDeviceOrientation = function () {
     var self = this;
-    var handler = function (e) {
-      var hd = null;
-      if (e.webkitCompassHeading != null) hd = e.webkitCompassHeading;
-      else if (e.alpha != null) hd = (360 - e.alpha) % 360;
+    var handler = function (e, isAbsEvent) {
+      var hd = null, absolute = false;
+      if (e.webkitCompassHeading != null) { hd = e.webkitCompassHeading; absolute = true; }
+      else if (e.alpha != null) { hd = (360 - e.alpha) % 360; absolute = isAbsEvent || e.absolute === true; }
       if (hd == null) return;
-      var now = Date.now();
-      if (now - self._lastH < 90) return; self._lastH = now;
-      self.setState(function (s) { return { realHeading: hd, perms: s.perms.orientation === 'granted' ? s.perms : Object.assign({}, s.perms, { orientation: 'granted' }) }; });
+      if (absolute) self._hasAbsolute = true;
+      if (!absolute && self._hasAbsolute) return;   // 절대 소스가 있으면 상대값은 버림
+      self._compassHeading = hd;
+      self._ingestHeading();
     };
-    window.addEventListener('deviceorientationabsolute', handler);
-    window.addEventListener('deviceorientation', handler);
+    window.addEventListener('deviceorientationabsolute', function (e) { handler(e, true); });
+    window.addEventListener('deviceorientation', function (e) { handler(e, false); });
+  };
+  // Generic Sensor API: OS가 자이로·지자기·가속도를 융합한 절대 방위(고빈도·저지연).
+  app._startOrientationSensor = function () {
+    if (this._sensor || typeof AbsoluteOrientationSensor === 'undefined') return;
+    var self = this;
+    try {
+      var sensor = new AbsoluteOrientationSensor({ frequency: 60, referenceFrame: 'device' });
+      sensor.addEventListener('reading', function () {
+        var hd = self._headingFromQuat(sensor.quaternion); if (hd == null) return;
+        self._sensorHeading = hd; self._ingestHeading();
+      });
+      sensor.addEventListener('error', function () {
+        self._sensor = null; self._sensorHeading = null; self._sensorTrusted = false; self._sensorAgree = 0;
+      });
+      sensor.start();
+      this._sensor = sensor;
+    } catch (e) { /* 미지원/권한거부 → 나침반 폴백 */ }
   };
   app.requestCamera = function () {
     if (!navigator.mediaDevices) { this.setState(function (s) { return { perms: Object.assign({}, s.perms, { camera: 'unavailable' }) }; }); return; }
@@ -398,7 +494,7 @@
       .then(function (str) {
         self._stream = str;
         if (self._video) { self._video.srcObject = str; self._video.play().catch(function () {}); }
-        self.setState(function (s) { return { cameraOn: true, demo: false, perms: Object.assign({}, s.perms, { camera: 'granted' }) }; });
+        self.setState(function (s) { return { cameraOn: true, perms: Object.assign({}, s.perms, { camera: 'granted' }) }; });
       })
       .catch(function () { self.setState(function (s) { return { perms: Object.assign({}, s.perms, { camera: 'denied' }) }; }); });
   };
@@ -407,8 +503,8 @@
   app.initMapWhenReady = function () {
     var self = this;
     if (!window.L || !this._mapEl) { this._mapTry = (this._mapTry || 0) + 1; if (this._mapTry < 60) setTimeout(function () { self.initMapWhenReady(); }, 120); return; }
-    var g = this.effGeo();
-    var map = L.map(this._mapEl, { zoomControl: false, attributionControl: false }).setView([g.lat, g.lon], 16);
+    var sv = load(LS.view, null) || DEFAULT_VIEW;
+    var map = L.map(this._mapEl, { zoomControl: false, attributionControl: false }).setView([sv.lat, sv.lon], sv.zoom || 16);
     this._map = map;
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
     var LandUse = L.TileLayer.extend({
@@ -432,7 +528,10 @@
     this._overlay.on('load', function () { self.setState({ overlayStatus: '표시 중' }); });
     this._overlay.on('tileerror', function () { self._ovErr = (self._ovErr || 0) + 1; if (self._ovErr > 3) self.setState({ overlayStatus: VWORLD_KEY ? '연결 제한 · 잠시 후 재시도' : '공개 타일 제한 · API 키 권장' }); });
     if (this.state.overlayOn) this._overlay.addTo(map);
-    map.on('click', function (e) { self.addPoint(e.latlng.lat, e.latlng.lng); });
+    // 지도를 누르면 이름·그룹을 바로 지정하는 시트를 연다(자동 이름 대신).
+    map.on('click', function (e) { self.openPointSheet({ lat: e.latlng.lat, lon: e.latlng.lng }); });
+    // 지도 이동/줌 시 마지막 위치 저장 → 다음 방문에 그 위치로 복원(자동으로 내 위치로 튀지 않음).
+    map.on('moveend', function () { var c = map.getCenter(); save(LS.view, { lat: c.lat, lon: c.lng, zoom: map.getZoom() }); });
     this.refreshMarkers();
     this._locLayer = L.layerGroup().addTo(map);
     this.drawLoc();
@@ -443,40 +542,114 @@
     this._markers = L.layerGroup().addTo(this._map);
     var self = this;
     this.state.points.forEach(function (p) {
+      var col = self.effColor(p);
+      var hidden = !self.groupVisible(p);
       var label = (p.name || '').replace(/[<>&]/g, '');
-      var html = '<div style="position:relative;display:flex;flex-direction:column;align-items:center">' +
-        '<div style="position:absolute;bottom:24px;white-space:nowrap;background:rgba(6,7,9,.82);border:1px solid ' + p.color + ';border-radius:7px;padding:2px 7px;font:700 11px Pretendard,sans-serif;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.5)">' + label + '</div>' +
-        '<div style="width:20px;height:20px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:' + p.color + ';border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.5)"></div></div>';
+      var html = '<div style="position:relative;display:flex;flex-direction:column;align-items:center;opacity:' + (hidden ? '.32' : '1') + '">' +
+        '<div style="position:absolute;bottom:24px;white-space:nowrap;background:rgba(6,7,9,.82);border:1px solid ' + col + ';border-radius:7px;padding:2px 7px;font:700 11px Pretendard,sans-serif;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.5)">' + label + '</div>' +
+        '<div style="width:20px;height:20px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:' + col + ';border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.5)"></div></div>';
       var icon = L.divIcon({ className: '', html: html, iconSize: [20, 20], iconAnchor: [10, 20] });
       var m = L.marker([p.lat, p.lon], { icon: icon }).addTo(self._markers);
-      m.on('click', function (ev) { L.DomEvent.stopPropagation(ev); self.deletePointConfirm(p.id); });
+      m.on('click', function (ev) { L.DomEvent.stopPropagation(ev); self.openPointSheet(p); });
     });
   };
   app.drawLoc = function () {
     if (!this._locLayer) return;
     this._locLayer.clearLayers();
-    var g = this.effGeo();
+    var g = this.geo();
+    if (!g) return;   // 위치 미확보 시 파란 점 없음
     L.marker([g.lat, g.lon], { icon: L.divIcon({ className: '', html: '<div style="width:16px;height:16px;border-radius:50%;background:#2f80ff;border:3px solid #fff;box-shadow:0 0 0 4px rgba(47,128,255,.3)"></div>', iconSize: [16, 16], iconAnchor: [8, 8] }) }).addTo(this._locLayer);
   };
-  app.addPoint = function (lat, lon) {
-    var self = this;
+  // ── 지점 추가/편집 시트 ──
+  app.openPointSheet = function (p) {
+    // p: 지도 클릭 시 {lat,lon}(신규) 또는 기존 지점 객체(편집)
+    var isEdit = p && p.id != null;
+    this._sheetFocused = false;
+    this.setState({ sheet: {
+      mode: isEdit ? 'edit' : 'add',
+      id: isEdit ? p.id : null,
+      lat: p.lat, lon: p.lon,
+      name: isEdit ? p.name : '',
+      groupId: isEdit ? (p.groupId != null ? p.groupId : null) : this._lastGroupId,
+      color: isEdit ? (p.color || PAL[0]) : PAL[this.state.points.length % PAL.length],
+    } });
+  };
+  app.closeSheet = function () { this.setState({ sheet: null }); };
+  // 그룹/색 선택으로 시트를 다시 그리기 전에, 지금까지 입력한 이름을 보존한다.
+  app._syncSheetName = function () { var el = $('psheet-name'); if (el && this.state.sheet) this.state.sheet.name = el.value; };
+  app.sheetSetGroup = function (gid) { this._syncSheetName(); this.setState(function (s) { return { sheet: Object.assign({}, s.sheet, { groupId: gid }) }; }); };
+  app.sheetSetColor = function (c) { this._syncSheetName(); this.setState(function (s) { return { sheet: Object.assign({}, s.sheet, { color: c }) }; }); };
+  app.sheetAddGroup = function () {
+    var nm = window.prompt('새 그룹 이름'); if (!nm || !nm.trim()) return;
+    this._syncSheetName();
     this.setState(function (s) {
-      return {
-        points: s.points.concat([{ id: s.nextId, name: '지점 ' + s.nextId, lat: lat, lon: lon, color: PAL[s.points.length % PAL.length] }]),
-        nextId: s.nextId + 1,
-      };
-    }, function () { self.flash('지점 추가됨'); });
+      var g = { id: s.nextGid, name: nm.trim(), color: PAL[s.groups.length % PAL.length], visible: true };
+      return { groups: s.groups.concat([g]), nextGid: s.nextGid + 1, sheet: Object.assign({}, s.sheet, { groupId: g.id }) };
+    });
+  };
+  app.commitSheet = function () {
+    this._syncSheetName();
+    var sh = this.state.sheet; if (!sh) return;
+    var name = (sh.name || '').trim();
+    var self = this;
+    this._lastGroupId = sh.groupId;   // 다음 신규 지점의 기본 그룹으로 기억
+    if (sh.mode === 'edit') {
+      this.setState(function (s) {
+        return { points: s.points.map(function (x) { return x.id === sh.id ? Object.assign({}, x, { name: name || x.name, groupId: sh.groupId, color: sh.color }) : x; }), sheet: null };
+      }, function () { self.flash('지점 수정됨'); });
+    } else {
+      this.setState(function (s) {
+        var nm = name || ('지점 ' + s.nextId);
+        return { points: s.points.concat([{ id: s.nextId, name: nm, lat: sh.lat, lon: sh.lon, groupId: sh.groupId, color: sh.color }]), nextId: s.nextId + 1, sheet: null };
+      }, function () { self.flash('지점 추가됨'); });
+    }
+  };
+  app.deleteFromSheet = function () {
+    var sh = this.state.sheet; if (!sh || sh.id == null) return;
+    var self = this;
+    this.setState(function (s) { return { points: s.points.filter(function (x) { return x.id !== sh.id; }), sheet: null }; }, function () { self.flash('지점 삭제됨'); });
   };
   app.deletePointConfirm = function (id) {
     var p = this.state.points.find(function (x) { return x.id === id; }); if (!p) return;
     if (window.confirm('“' + p.name + '” 지점을 삭제할까요?')) this.setState(function (s) { return { points: s.points.filter(function (x) { return x.id !== id; }) }; });
   };
-  app.renamePoint = function (id) {
-    var p = this.state.points.find(function (x) { return x.id === id; }); if (!p) return;
-    var nn = window.prompt('지점 이름', p.name);
-    if (nn && nn.trim()) this.setState(function (s) { return { points: s.points.map(function (x) { return x.id === id ? Object.assign({}, x, { name: nn.trim() }) : x; }) }; });
+  // ── 그룹 관리(목록 화면) ──
+  app.addGroup = function () {
+    var nm = window.prompt('새 그룹 이름'); if (!nm || !nm.trim()) return;
+    this.setState(function (s) { return { groups: s.groups.concat([{ id: s.nextGid, name: nm.trim(), color: PAL[s.groups.length % PAL.length], visible: true }]), nextGid: s.nextGid + 1 }; });
   };
-  app.recenter = function () { if (this._map) { var g = this.effGeo(); this._map.flyTo([g.lat, g.lon], 16, { duration: 0.6 }); this.drawLoc(); } };
+  app.renameGroup = function (id) {
+    var g = this.groupById(id); if (!g) return;
+    var nm = window.prompt('그룹 이름', g.name); if (!nm || !nm.trim()) return;
+    this.setState(function (s) { return { groups: s.groups.map(function (x) { return x.id === id ? Object.assign({}, x, { name: nm.trim() }) : x; }) }; });
+  };
+  app.cycleGroupColor = function (id) {
+    var g = this.groupById(id); if (!g) return;
+    var i = (PAL.indexOf(g.color) + 1 + PAL.length) % PAL.length;
+    this.setState(function (s) { return { groups: s.groups.map(function (x) { return x.id === id ? Object.assign({}, x, { color: PAL[i] }) : x; }) }; });
+  };
+  app.toggleGroup = function (id) {
+    this.setState(function (s) { return { groups: s.groups.map(function (x) { return x.id === id ? Object.assign({}, x, { visible: x.visible === false }) : x; }) }; });
+  };
+  app.deleteGroup = function (id) {
+    var g = this.groupById(id); if (!g) return;
+    if (!window.confirm('“' + g.name + '” 그룹을 삭제할까요?\n(그룹의 지점은 삭제되지 않고 “그룹 없음”으로 이동합니다)')) return;
+    this.setState(function (s) {
+      return { groups: s.groups.filter(function (x) { return x.id !== id; }),
+        points: s.points.map(function (p) { return p.groupId === id ? Object.assign({}, p, { groupId: null }) : p; }) };
+    });
+  };
+  app.recenter = function () {
+    if (!this._map) return;
+    var g = this.geo();
+    if (!g) { this.flash('위치를 확인하는 중…'); if (this.state.perms.location !== 'granted') this.requestLocation(); return; }
+    // 지도 탭이 숨겨져 있으면(컨테이너 크기 0) flyTo 애니메이션이 NaN 좌표를 만든다.
+    // 보일 때만 부드럽게 이동하고, 숨겨져 있으면 애니메이션 없이 위치만 설정한다.
+    var visible = this._mapEl && this._mapEl.offsetWidth > 0;
+    if (visible) { this._map.invalidateSize(); this._map.flyTo([g.lat, g.lon], 16, { duration: 0.6 }); }
+    else { this._map.setView([g.lat, g.lon], 16, { animate: false }); }
+    this.drawLoc();
+  };
   app.setOpacity = function (v) { this.setState({ opacity: v }); if (this._overlay) this._overlay.setOpacity(v); };
   app.toggleOverlay = function () {
     var self = this;
@@ -488,40 +661,176 @@
   };
   app.clearDraw = function () { if (window.confirm('모든 지점을 삭제할까요?')) this.setState({ points: [] }); };
 
-  // ── AR 핀 계산 ──
+  // ── AR 핀 계산 (실측 위치 + 보간된 헤딩 기준) ──
   app.computePins = function () {
-    var g = this.effGeo(), h = this.effHeading(), half = this.fov() / 2;
-    var pins = [], arrows = [];
-    var self = this;
-    this.state.points.forEach(function (p, i) {
+    var g = this.geo();
+    if (!g || this._rawHeading == null) return { pins: [], arrows: [] };
+    var h = this._sh, half = this.fov() / 2;
+    var pins = [], arrows = [], self = this;
+    this.visiblePoints().forEach(function (p) {
       var d = self.dist(g, p), b = self.bearing(g, p);
       var rel = ((b - h + 540) % 360) - 180;
       var distLabel = self.fmtDist(d), dirLabel = self.dirLabel(b);
+      var color = self.effColor(p);
       if (Math.abs(rel) <= half) {
         var scale = Math.max(0.68, Math.min(1.18, 1.15 - d / 2000));
-        pins.push({ id: p.id, name: p.name, color: p.color, distLabel: distLabel, dirLabel: dirLabel,
-          left: (50 + rel / half * 50).toFixed(1), top: (44 + (i % 3) * 8).toFixed(0), scale: scale.toFixed(2) });
+        var lane = ((p.id % 3) + 3) % 3;   // 지점별 고정 세로 위치(집합 변화에도 튀지 않게)
+        pins.push({ id: p.id, name: p.name, color: color, distLabel: distLabel, dirLabel: dirLabel,
+          left: (50 + rel / half * 50), top: (42 + lane * 9), scale: scale });
       } else {
         var left = rel < 0;
-        arrows.push({ id: p.id, name: p.name, color: p.color, distLabel: distLabel, glyph: left ? '‹' : '›',
-          sideCss: left ? 'left:8px' : 'right:8px', flex: left ? 'row' : 'row-reverse' });
+        arrows.push({ id: p.id, name: p.name, color: color, distLabel: distLabel, glyph: left ? '‹' : '›', side: left ? 'left' : 'right' });
       }
     });
     return { pins: pins, arrows: arrows };
   };
   app.compassTicks = function () {
-    var h = this.effHeading(), half = this.fov() / 2, acc = this.accent();
+    var h = this._sh, half = this.fov() / 2, acc = this.accent();
     var ticks = [];
     for (var deg = 0; deg < 360; deg += 45) {
       var rel = ((deg - h + 540) % 360) - 180;
-      if (Math.abs(rel) <= half) {
-        var card = this.cardinal(deg);
-        var major = deg % 90 === 0;
-        ticks.push({ label: card, left: (50 + rel / half * 50).toFixed(1), h: major ? 10 : 6,
-          col: card === 'N' ? acc : (major ? '#fff' : 'rgba(255,255,255,.6)') });
-      }
+      var card = this.cardinal(deg);
+      var major = deg % 90 === 0;
+      ticks.push({ label: card, inView: Math.abs(rel) <= half, left: (50 + rel / half * 50), h: major ? 10 : 6,
+        col: card === 'N' ? acc : (major ? '#fff' : 'rgba(255,255,255,.6)') });
     }
     return ticks;
+  };
+
+  // ── AR 렌더 루프 (requestAnimationFrame) ──
+  // 센서 setState 재렌더 대신, 지속 DOM 요소의 위치/텍스트만 매 프레임 갱신 → 깜박임 제거.
+  app.startAR = function () {
+    if (this._raf) return;
+    this.initTicks();
+    var self = this;
+    var loop = function () { self._raf = requestAnimationFrame(loop); self.tickAR(); };
+    this._raf = requestAnimationFrame(loop);
+  };
+  app.stopAR = function () { if (this._raf) { cancelAnimationFrame(this._raf); this._raf = null; } };
+  app.initTicks = function () {
+    var host = $('compass-ticks'); if (!host || this._tickEls) return;
+    var els = [];
+    for (var i = 0; i < 8; i++) {
+      var d = document.createElement('div');
+      d.style.cssText = 'position:absolute;top:0;transform:translateX(-50%);text-align:center;will-change:left';
+      d.innerHTML = '<div class="tk-bar" style="width:2px;margin:0 auto;border-radius:2px"></div><div class="tk-lb" style="font-size:11px;font-weight:800;margin-top:2px"></div>';
+      host.appendChild(d); els.push(d);
+    }
+    this._tickEls = els;
+  };
+  app.tickAR = function () {
+    var S = this.state;
+    if (S.tab !== 'ar') return;
+    // 헤딩: One Euro 적응형 필터로 부드럽게(정지 시 지터↓, 회전 시 지연↓)
+    if (this._rawHeading != null) {
+      if (!this._hf) this._hf = makeHeadingFilter();
+      var now = (window.performance && performance.now) ? performance.now() : Date.now();
+      this._sh = this._hf.filter(this._rawHeading, now);
+    }
+    setText('heading-readout', this.cardinal(this._sh) + ' ' + Math.round(this._sh) + '°');
+    // 나침반 눈금(지속 요소 위치만 갱신)
+    if (this._tickEls) {
+      var ticks = this.compassTicks(), els = this._tickEls;
+      for (var i = 0; i < ticks.length; i++) {
+        var tk = ticks[i], el = els[i];
+        if (!tk.inView) { el.style.display = 'none'; continue; }
+        el.style.display = 'block';
+        el.style.left = tk.left + '%';
+        var bar = el.firstChild, lb = el.lastChild;
+        bar.style.height = tk.h + 'px'; bar.style.background = tk.col;
+        if (lb.textContent !== tk.label) lb.textContent = tk.label;
+        lb.style.color = tk.col;
+      }
+    }
+    // 핀 / 화살표
+    var g = this.geo(), arHint = $('ar-hint');
+    if (!g || this._rawHeading == null) {
+      this._clearPinEls(); this._renderedPins = [];
+      if (arHint) {
+        var m = !g ? '위치(GPS)를 확인하는 중입니다…' : '기기를 8자로 움직여 나침반을 보정해 주세요';
+        if (S.perms.location === 'denied') m = '위치 권한이 필요합니다 · 설정 탭에서 허용';
+        else if (S.perms.location === 'idle') m = '위치 권한을 허용하면 지점이 표시됩니다';
+        else if (S.perms.orientation === 'denied') m = '방향(나침반) 권한이 필요합니다 · 설정 탭에서 허용';
+        else if (this._rawHeading == null && S.perms.orientation === 'idle') m = '방향(나침반) 권한을 허용하면 지점이 표시됩니다';
+        arHint.textContent = m; arHint.style.display = 'block';
+      }
+      return;
+    }
+    if (arHint) arHint.style.display = 'none';
+    var cp = this.computePins();
+    this._renderedPins = cp.pins;
+    this._reconcilePins(cp.pins);
+    this._reconcileArrows(cp.arrows);
+  };
+  app._clearPinEls = function () {
+    var m = this._pinEls, id; for (id in m) { m[id].el.remove(); delete m[id]; }
+    var a = this._arrowEls; for (id in a) { a[id].el.remove(); delete a[id]; }
+  };
+  app._reconcilePins = function (pins) {
+    var host = $('pins'); if (!host) return;
+    var map = this._pinEls, seen = {};
+    pins.forEach(function (p) {
+      seen[p.id] = 1;
+      var rec = map[p.id];
+      if (!rec) {
+        var nel = document.createElement('div');
+        nel.style.cssText = 'position:absolute;z-index:5;transition:opacity .2s ease;opacity:0;will-change:left,top,transform';
+        nel.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center">' +
+          '<div class="pin-card" style="background:rgba(6,7,9,.82);backdrop-filter:blur(6px);border:1.5px solid #fff;border-radius:10px;padding:5px 9px;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.5)">' +
+          '<div class="pin-name" style="font-size:12px;font-weight:700;line-height:1.1"></div>' +
+          '<div class="pin-sub" style="font-size:11px;font-weight:800;margin-top:1px"></div></div>' +
+          '<div class="pin-stem" style="width:2px;height:14px"></div>' +
+          '<div class="pin-dot" style="width:14px;height:14px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.6)"></div>' +
+          '</div>';
+        host.appendChild(nel);
+        rec = map[p.id] = { el: nel, name: null, sub: null, color: null };
+        requestAnimationFrame(function () { nel.style.opacity = '1'; });  // 최초 등장에만 페이드
+      }
+      var el = rec.el;
+      el.style.left = p.left + '%';
+      el.style.top = p.top + '%';
+      el.style.transform = 'translate(-50%,-100%) scale(' + p.scale.toFixed(3) + ')';
+      if (rec.name !== p.name) { el.querySelector('.pin-name').textContent = p.name; rec.name = p.name; }
+      var sub = p.distLabel + ' · ' + p.dirLabel;
+      if (rec.sub !== sub) { el.querySelector('.pin-sub').textContent = sub; rec.sub = sub; }
+      if (rec.color !== p.color) {
+        el.querySelector('.pin-card').style.borderColor = p.color;
+        el.querySelector('.pin-sub').style.color = p.color;
+        el.querySelector('.pin-stem').style.background = p.color;
+        el.querySelector('.pin-dot').style.background = p.color;
+        rec.color = p.color;
+      }
+    });
+    for (var id in map) { if (!seen[id]) { map[id].el.remove(); delete map[id]; } }
+  };
+  app._reconcileArrows = function (arrows) {
+    var host = $('arrows'); if (!host) return;
+    var map = this._arrowEls, seen = {};
+    arrows.forEach(function (a) {
+      seen[a.id] = 1;
+      var rec = map[a.id];
+      if (!rec) {
+        var nel = document.createElement('div');
+        nel.style.cssText = 'position:absolute;top:48%;transform:translateY(-50%);z-index:4;display:flex;align-items:center;gap:5px';
+        nel.innerHTML = '<div class="ar-glyph" style="width:26px;height:26px;border-radius:50%;background:rgba(6,7,9,.72);border:1.5px solid #fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900"></div>' +
+          '<div style="background:rgba(6,7,9,.72);border-radius:7px;padding:3px 7px;font-size:10px;font-weight:700;white-space:nowrap"><span class="ar-name"></span><br><span class="ar-dist"></span></div>';
+        host.appendChild(nel);
+        rec = map[a.id] = { el: nel, side: null, name: null, dist: null, color: null };
+      }
+      var el = rec.el;
+      if (rec.side !== a.side) {
+        el.style.left = a.side === 'left' ? '8px' : 'auto';
+        el.style.right = a.side === 'right' ? '8px' : 'auto';
+        el.style.flexDirection = a.side === 'left' ? 'row' : 'row-reverse';
+        rec.side = a.side;
+      }
+      var glyph = el.querySelector('.ar-glyph');
+      if (glyph.textContent !== a.glyph) glyph.textContent = a.glyph;
+      if (rec.color !== a.color) { glyph.style.borderColor = a.color; glyph.style.color = a.color; el.querySelector('.ar-dist').style.color = a.color; rec.color = a.color; }
+      if (rec.name !== a.name) { el.querySelector('.ar-name').textContent = a.name; rec.name = a.name; }
+      if (rec.dist !== a.distLabel) { el.querySelector('.ar-dist').textContent = a.distLabel; rec.dist = a.distLabel; }
+    });
+    for (var id in map) { if (!seen[id]) { map[id].el.remove(); delete map[id]; } }
   };
 
   // ── 촬영 ──
@@ -539,16 +848,12 @@
       else { sw = v.videoWidth; sh = sw / cr; sx = 0; sy = (v.videoHeight - sh) / 2; }
       ctx.drawImage(v, sx, sy, sw, sh, 0, 0, W, H);
     } else {
-      var grd = ctx.createLinearGradient(0, 0, 0, H);
-      grd.addColorStop(0, '#243b57'); grd.addColorStop(0.34, '#3f5f80'); grd.addColorStop(0.52, '#7d94ac'); grd.addColorStop(0.54, '#59606a'); grd.addColorStop(1, '#31363d');
-      ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = 'rgba(22,26,34,.78)';
-      [[60, 440, 90, 200], [230, 380, 80, 300], [430, 470, 100, 190], [560, 340, 95, 340]].forEach(function (r) { ctx.fillRect(r[0], r[1], r[2], r[3]); });
+      ctx.fillStyle = '#0a0b0d'; ctx.fillRect(0, 0, W, H);
     }
-    var pins = this.computePins().pins;
+    var pins = this._renderedPins || [];   // 화면에 실제로 보이는 핀 그대로 저장
     var acc = this.accent();
     pins.forEach(function (p) {
-      var x = parseFloat(p.left) / 100 * W, y = parseFloat(p.top) / 100 * H;
+      var x = p.left / 100 * W, y = p.top / 100 * H;
       ctx.fillStyle = p.color; ctx.strokeStyle = '#fff'; ctx.lineWidth = 5;
       ctx.beginPath(); ctx.arc(x, y, 13, 0, 7); ctx.fill(); ctx.stroke();
       ctx.fillStyle = 'rgba(6,7,9,.82)';
@@ -564,7 +869,7 @@
     });
     ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fillRect(0, 0, W, 70);
     ctx.fillStyle = acc; ctx.font = '800 30px Pretendard, sans-serif'; ctx.textAlign = 'center';
-    var h = this.effHeading(); ctx.fillText(this.cardinal(h) + '  ' + Math.round(h) + '°', W / 2, 46);
+    var h = this._sh; ctx.fillText(this.cardinal(h) + '  ' + Math.round(h) + '°', W / 2, 46);
     ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.font = '600 22px Pretendard, sans-serif'; ctx.textAlign = 'right';
     ctx.fillText(new Date().toLocaleString('ko-KR'), W - 20, H - 24);
     ctx.textAlign = 'left';
@@ -579,10 +884,6 @@
   };
 
   app.setTab = function (t) { this.setState({ tab: t }); };
-  app.toggleDemo = function () {
-    var self = this;
-    this.setState(function (s) { return { demo: !s.demo }; }, function () { self.drawLoc(); if (!self.state.demo && !self.state.geo) self.requestLocation(); });
-  };
 
   // ── 렌더 (원본 renderVals를 DOM 직접 갱신으로) ──
   function setStyle(id, prop, val) { var el = $(id); if (el) el.style[prop] = val; }
@@ -591,8 +892,7 @@
 
   app.render = function () {
     var S = this.state, acc = ACCENT;
-    var cp = this.computePins(), pins = cp.pins, arrows = cp.arrows;
-    var g = this.effGeo(), h = this.effHeading();
+    var g = this.geo();
 
     // 화면(탭) 표시
     setStyle('sec-ar', 'display', S.tab === 'ar' ? 'block' : 'none');
@@ -602,48 +902,23 @@
     setStyle('sec-perms', 'display', S.tab === 'perms' ? 'flex' : 'none');
     ['ar', 'map', 'list', 'gallery', 'perms'].forEach(function (k) { setStyle('tab-' + k, 'color', S.tab === k ? acc : 'rgba(255,255,255,.5)'); });
 
-    // AR 상단
+    // AR 카메라 / 안내 (핀·나침반·헤딩은 rAF 루프 tickAR에서 부드럽게 갱신)
     if (this._video) this._video.style.opacity = S.cameraOn ? 1 : 0;
-    setStyle('backdrop', 'opacity', S.cameraOn ? 0 : 1);
-    setStyle('gps-dot', 'background', S.demo ? '#e0a020' : (S.geo ? '#4fd6a0' : 'rgba(255,255,255,.4)'));
-    setText('gps-label', S.demo ? '데모' : (S.geo ? '±' + Math.round(S.geo.acc) + 'm' : '대기'));
-    setStyle('comp-dot', 'background', (!S.demo && S.realHeading != null) ? '#4fd6a0' : '#e0a020');
-    var mc = $('mode-chip');
-    if (mc) {
-      mc.style.background = S.demo ? 'rgba(224,160,32,.22)' : 'rgba(47,158,111,.22)';
-      mc.style.borderColor = S.demo ? 'rgba(224,160,32,.5)' : 'rgba(47,158,111,.5)';
-      mc.style.color = S.demo ? '#e0a020' : '#4fd6a0';
-      mc.textContent = S.demo ? '데모 모드' : '실측 모드';
+    setStyle('backdrop', 'display', S.cameraOn ? 'none' : 'flex');
+    var bh = $('backdrop-hint');
+    if (bh) {
+      var bmsg = '';
+      if (S.perms.camera === 'denied') bmsg = '브라우저 설정에서 카메라 권한을 허용해 주세요.';
+      else if (S.perms.camera === 'unavailable') bmsg = '이 브라우저는 카메라를 지원하지 않습니다.';
+      bh.textContent = bmsg;
     }
+    setStyle('gps-dot', 'background', g ? '#4fd6a0' : (S.perms.location === 'pending' ? '#e0a020' : 'rgba(255,255,255,.4)'));
+    setText('gps-label', g ? '±' + Math.round(g.acc) + 'm' : (S.perms.location === 'denied' ? '거부' : '대기'));
+    setStyle('comp-dot', 'background', S.heading != null ? '#4fd6a0' : (S.perms.orientation === 'pending' ? '#e0a020' : 'rgba(255,255,255,.4)'));
     setStyle('compass-band', 'display', SHOW_COMPASS ? 'block' : 'none');
-    setHTML('compass-ticks', this.compassTicks().map(function (t) {
-      return '<div style="position:absolute;top:0;left:' + t.left + '%;transform:translateX(-50%);text-align:center">' +
-        '<div style="width:2px;height:' + t.h + 'px;margin:0 auto;background:' + t.col + ';border-radius:2px"></div>' +
-        '<div style="font-size:11px;font-weight:800;color:' + t.col + ';margin-top:2px">' + t.label + '</div></div>';
-    }).join(''));
     setStyle('heading-readout', 'color', acc);
-    setText('heading-readout', this.cardinal(h) + ' ' + Math.round(h) + '°');
 
-    // AR 핀 / 화살표
-    setHTML('pins', pins.map(function (p) {
-      return '<div style="position:absolute;left:' + p.left + '%;top:' + p.top + '%;transform:translate(-50%,-100%) scale(' + p.scale + ');animation:pindrop .25s ease;z-index:5">' +
-        '<div style="display:flex;flex-direction:column;align-items:center">' +
-        '<div style="background:rgba(6,7,9,.82);backdrop-filter:blur(6px);border:1.5px solid ' + p.color + ';border-radius:10px;padding:5px 9px;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.5)">' +
-        '<div style="font-size:12px;font-weight:700;line-height:1.1">' + esc(p.name) + '</div>' +
-        '<div style="font-size:11px;font-weight:800;color:' + p.color + ';margin-top:1px">' + esc(p.distLabel) + ' · ' + esc(p.dirLabel) + '</div></div>' +
-        '<div style="width:2px;height:14px;background:' + p.color + '"></div>' +
-        '<div style="width:14px;height:14px;border-radius:50%;background:' + p.color + ';border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.6)"></div>' +
-        '</div></div>';
-    }).join(''));
-    setHTML('arrows', arrows.map(function (a) {
-      return '<div style="position:absolute;' + a.sideCss + ';top:48%;transform:translateY(-50%);z-index:4;display:flex;align-items:center;gap:5px;flex-direction:' + a.flex + '">' +
-        '<div style="width:26px;height:26px;border-radius:50%;background:rgba(6,7,9,.72);border:1.5px solid ' + a.color + ';display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:' + a.color + '">' + a.glyph + '</div>' +
-        '<div style="background:rgba(6,7,9,.72);border-radius:7px;padding:3px 7px;font-size:10px;font-weight:700;white-space:nowrap">' + esc(a.name) + '<br><span style="color:' + a.color + '">' + esc(a.distLabel) + '</span></div></div>';
-    }).join(''));
-
-    // 데모 컨트롤 / 셔터 썸네일
-    setStyle('demo-ctrl', 'display', S.demo ? 'flex' : 'none');
-    var hr = $('heading-range'); if (hr) hr.value = Math.round(S.heading);
+    // 셔터 썸네일
     setHTML('gallery-thumb', S.photos[0]
       ? '<img src="' + S.photos[0].url + '" style="width:100%;height:100%;object-fit:cover">'
       : '<span>' + S.photos.length + '</span>');
@@ -657,23 +932,8 @@
     setText('overlay-status', S.overlayStatus);
     setText('point-count-box', '지점 ' + S.points.length + '개');
 
-    // 지점 목록
-    setHTML('points-list', S.points.map(function (p) {
-      var d = app.dist(g, p), b = app.bearing(g, p);
-      var coords = p.lat.toFixed(5) + ', ' + p.lon.toFixed(5);
-      var distLabel = app.fmtDist(d), dirLabel = app.dirLabel(b) + ' ' + Math.round(b) + '°';
-      return '<div style="display:flex;align-items:center;gap:12px;background:#111317;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px 13px">' +
-        '<div style="width:12px;height:12px;border-radius:50%;background:' + p.color + ';flex-shrink:0"></div>' +
-        '<div style="flex:1;min-width:0">' +
-        '<div style="font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(p.name) + '</div>' +
-        '<div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:2px">' + esc(coords) + '</div></div>' +
-        '<div style="text-align:right">' +
-        '<div style="font-size:14px;font-weight:800;color:' + p.color + '">' + esc(distLabel) + '</div>' +
-        '<div style="font-size:11px;color:rgba(255,255,255,.55);margin-top:1px">' + esc(dirLabel) + '</div></div>' +
-        '<div data-act="rename" data-id="' + p.id + '" style="cursor:pointer;padding:6px;color:rgba(255,255,255,.45);font-size:15px">✎</div>' +
-        '<div data-act="delete" data-id="' + p.id + '" style="cursor:pointer;padding:6px;color:rgba(255,120,120,.7);font-size:16px">×</div></div>';
-    }).join(''));
-    setStyle('points-empty', 'display', S.points.length ? 'none' : 'block');
+    // 지점 목록(그룹별)
+    this.renderList(g);
 
     // 갤러리
     setHTML('photos-grid', S.photos.map(function (ph) {
@@ -714,12 +974,6 @@
         '<div data-act="req" data-key="' + c.key + '" style="cursor:pointer;margin-top:11px;text-align:center;background:' + c.btnBg + ';border:1px solid ' + c.btnBd + ';border-radius:11px;padding:10px;font-size:13px;font-weight:700;color:' + c.btnFg + '">' + c.btnLabel + '</div></div>';
     }).join(''));
 
-    // 권한화면 데모 카드
-    var dc = $('demo-card');
-    if (dc) { dc.style.background = S.demo ? 'rgba(224,160,32,.12)' : '#111317'; dc.style.borderColor = S.demo ? 'rgba(224,160,32,.4)' : 'rgba(255,255,255,.08)'; }
-    setStyle('demo-toggle2', 'background', S.demo ? '#e0a020' : 'rgba(255,255,255,.2)');
-    setStyle('demo-knob2', 'left', S.demo ? '22px' : '3px');
-
     // 토스트
     setStyle('toast', 'display', S.toast ? 'block' : 'none');
     setText('toast', S.toast || '');
@@ -728,6 +982,97 @@
     var viewer = S.photos.find(function (p) { return p.id === S.viewer; });
     setStyle('viewer', 'display', viewer ? 'flex' : 'none');
     var vi = $('viewer-img'); if (vi) vi.src = viewer ? viewer.url : '';
+
+    // 지점 추가/편집 시트
+    this.renderSheet();
+  };
+
+  // ── 지점 목록: 그룹 헤더 + 지점 카드 ──
+  app.renderList = function (g) {
+    var self = this, S = this.state;
+    var html = '<div style="display:flex;justify-content:flex-end;margin-bottom:2px">' +
+      '<div data-act="addgroup" style="cursor:pointer;background:rgba(166,7,57,.16);border:1px solid rgba(166,7,57,.45);color:#e5688f;border-radius:10px;padding:7px 12px;font-size:12px;font-weight:800">+ 새 그룹</div></div>';
+    var sections = S.groups.map(function (grp) { return { grp: grp, pts: S.points.filter(function (p) { return p.groupId === grp.id; }) }; });
+    sections.push({ grp: null, pts: S.points.filter(function (p) { return p.groupId == null; }) });
+    sections.forEach(function (sec) {
+      var grp = sec.grp, pts = sec.pts;
+      if (!grp && pts.length === 0) return;   // 빈 '그룹 없음'은 숨김
+      var gcol = grp ? grp.color : 'rgba(255,255,255,.4)';
+      var hidden = grp ? grp.visible === false : false;
+      html += '<div style="display:flex;align-items:center;gap:9px;margin:16px 2px 8px">' +
+        '<div style="width:11px;height:11px;border-radius:3px;background:' + gcol + '"></div>' +
+        '<div style="font-size:13px;font-weight:800;color:#f4f4f5">' + esc(grp ? grp.name : '그룹 없음') + '</div>' +
+        '<div style="font-size:11px;color:rgba(255,255,255,.4);font-weight:700">' + pts.length + '</div>' +
+        '<div style="flex:1"></div>';
+      if (grp) {
+        html += '<div data-act="gvis" data-gid="' + grp.id + '" style="cursor:pointer;padding:4px 5px;font-size:14px;opacity:' + (hidden ? '.5' : '1') + '" title="표시/숨김">' + (hidden ? '🙈' : '👁️') + '</div>' +
+          '<div data-act="gcolor" data-gid="' + grp.id + '" style="cursor:pointer;padding:4px 5px;font-size:13px" title="색 변경">🎨</div>' +
+          '<div data-act="grename" data-gid="' + grp.id + '" style="cursor:pointer;padding:4px 5px;color:rgba(255,255,255,.5);font-size:14px">✎</div>' +
+          '<div data-act="gdelete" data-gid="' + grp.id + '" style="cursor:pointer;padding:4px 5px;color:rgba(255,120,120,.7);font-size:16px">×</div>';
+      }
+      html += '</div>';
+      if (pts.length === 0) { html += '<div style="font-size:12px;color:rgba(255,255,255,.35);padding:2px 4px 4px">지점이 없습니다</div>'; }
+      pts.forEach(function (p) {
+        var pcol = self.effColor(p);
+        var coords = p.lat.toFixed(5) + ', ' + p.lon.toFixed(5);
+        var right = '';
+        if (g) { var d = self.dist(g, p), b = self.bearing(g, p);
+          right = '<div style="text-align:right"><div style="font-size:14px;font-weight:800;color:' + pcol + '">' + esc(self.fmtDist(d)) + '</div>' +
+            '<div style="font-size:11px;color:rgba(255,255,255,.55);margin-top:1px">' + esc(self.dirLabel(b) + ' ' + Math.round(b) + '°') + '</div></div>'; }
+        html += '<div data-act="edit" data-id="' + p.id + '" style="cursor:pointer;display:flex;align-items:center;gap:12px;background:#111317;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px 13px;margin-bottom:9px;opacity:' + (hidden ? '.45' : '1') + '">' +
+          '<div style="width:12px;height:12px;border-radius:50%;background:' + pcol + ';flex-shrink:0"></div>' +
+          '<div style="flex:1;min-width:0">' +
+          '<div style="font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(p.name) + '</div>' +
+          '<div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:2px">' + esc(coords) + '</div></div>' +
+          right +
+          '<div data-act="delete" data-id="' + p.id + '" style="cursor:pointer;padding:6px;color:rgba(255,120,120,.7);font-size:16px">×</div></div>';
+      });
+    });
+    setHTML('points-list', html);
+    setStyle('points-empty', 'display', (S.points.length === 0 && S.groups.length === 0) ? 'block' : 'none');
+  };
+
+  // ── 지점 추가/편집 시트 렌더 ──
+  app.renderSheet = function () {
+    var sh = this.state.sheet, wrap = $('point-sheet');
+    if (!wrap) return;
+    if (!sh) { wrap.style.display = 'none'; this._sheetFocused = false; this._sheetSig = null; return; }
+    // 구조(모드·그룹·색·그룹수)가 그대로면 다시 그리지 않는다 → 이름 입력 중 GPS 갱신 등
+    // 무관한 setState가 입력 필드를 초기화하지 않도록(텍스트·커서 유지).
+    var sig = sh.mode + '|' + sh.id + '|' + sh.groupId + '|' + sh.color + '|' + this.state.groups.length;
+    if (wrap.style.display === 'block' && this._sheetSig === sig) return;
+    this._sheetSig = sig;
+    wrap.style.display = 'block';
+    var S = this.state;
+    function chipG(gid, name, col, on) {
+      return '<div data-act="group" data-gid="' + (gid == null ? '' : gid) + '" style="cursor:pointer;display:flex;align-items:center;gap:6px;border:1.5px solid ' + (on ? col : 'rgba(255,255,255,.14)') + ';background:' + (on ? 'rgba(255,255,255,.06)' : 'transparent') + ';border-radius:999px;padding:7px 12px;font-size:12.5px;font-weight:700;color:#f4f4f5">' +
+        '<span style="width:10px;height:10px;border-radius:50%;background:' + col + '"></span>' + esc(name) + '</div>';
+    }
+    var groupsChips = chipG(null, '그룹 없음', 'rgba(255,255,255,.5)', sh.groupId == null);
+    S.groups.forEach(function (grp) { groupsChips += chipG(grp.id, grp.name, grp.color, sh.groupId === grp.id); });
+    groupsChips += '<div data-act="addgroup" style="cursor:pointer;border:1px dashed rgba(255,255,255,.3);color:rgba(255,255,255,.7);border-radius:999px;padding:7px 12px;font-size:12.5px;font-weight:700">+ 새 그룹</div>';
+    var colorRow = '';
+    if (sh.groupId == null) {
+      colorRow = '<div style="font-size:12px;color:rgba(255,255,255,.5);margin:14px 2px 8px;font-weight:700">색상</div><div style="display:flex;gap:9px;flex-wrap:wrap">' +
+        PAL.map(function (c) {
+          var on = c === sh.color;
+          return '<div data-act="color" data-color="' + c + '" style="cursor:pointer;width:30px;height:30px;border-radius:50%;background:' + c + ';border:3px solid ' + (on ? '#fff' : 'transparent') + ';box-shadow:0 0 0 1px rgba(255,255,255,.2)"></div>';
+        }).join('') + '</div>';
+    }
+    $('point-sheet-card').innerHTML =
+      '<div style="width:38px;height:4px;border-radius:2px;background:rgba(255,255,255,.2);margin:6px auto 16px"></div>' +
+      '<div style="font-size:17px;font-weight:900;margin-bottom:2px">' + (sh.mode === 'edit' ? '지점 편집' : '새 지점') + '</div>' +
+      '<div style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:14px">' + sh.lat.toFixed(5) + ', ' + sh.lon.toFixed(5) + '</div>' +
+      '<input id="psheet-name" type="text" placeholder="지점 이름" value="' + esc(sh.name || '') + '" style="width:100%;background:#111317;border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:13px 14px;font-size:15px;font-weight:600;color:#f4f4f5;outline:none">' +
+      '<div style="font-size:12px;color:rgba(255,255,255,.5);margin:14px 2px 8px;font-weight:700">그룹</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">' + groupsChips + '</div>' +
+      colorRow +
+      '<div style="display:flex;gap:10px;margin-top:20px">' +
+      (sh.mode === 'edit' ? '<div data-act="delete" style="cursor:pointer;text-align:center;background:rgba(180,40,60,.22);border:1px solid rgba(220,80,100,.4);border-radius:13px;padding:14px 18px;font-size:14px;font-weight:800;color:#ff9aab">삭제</div>' : '') +
+      '<div data-act="cancel" style="cursor:pointer;flex:1;text-align:center;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:13px;padding:14px;font-size:14px;font-weight:700">취소</div>' +
+      '<div data-act="save" style="cursor:pointer;flex:1;text-align:center;background:#a60739;border-radius:13px;padding:14px;font-size:14px;font-weight:800;color:#fff">저장</div>' +
+      '</div>';
+    if (sh.mode === 'add' && !this._sheetFocused) { this._sheetFocused = true; var el = $('psheet-name'); if (el) setTimeout(function () { el.focus(); }, 60); }
   };
 
   // ── 이벤트 배선 (한 번만) ──
@@ -740,12 +1085,10 @@
       var el = $('tab-' + k); if (el) el.addEventListener('click', function () { app.setTab(k); });
     });
 
-    // 모드 칩 / 데모 토글
-    $('mode-chip').addEventListener('click', function () { app.toggleDemo(); });
-    $('demo-toggle2').addEventListener('click', function () { app.toggleDemo(); });
+    // 카메라 꺼짐 안내 → 한 번에 카메라·위치·나침반 권한 요청
+    $('backdrop-cam').addEventListener('click', function () { app.requestCamera(); app.requestLocation(); app.attachOrientation(false); });
 
     // 슬라이더
-    $('heading-range').addEventListener('input', function (e) { app.setState({ heading: parseFloat(e.target.value) }); });
     $('opacity-range').addEventListener('input', function (e) { app.setOpacity(parseFloat(e.target.value)); });
 
     // AR 버튼
@@ -761,13 +1104,32 @@
     $('viewer-close').addEventListener('click', function () { app.setState({ viewer: null }); });
     $('viewer-delete').addEventListener('click', function () { app.setState(function (s) { return { photos: s.photos.filter(function (p) { return p.id !== s.viewer; }), viewer: null }; }); });
 
-    // 목록 (위임)
+    // 목록 (위임) — 지점 편집/삭제 + 그룹 관리
     $('points-list').addEventListener('click', function (e) {
       var t = e.target.closest('[data-act]'); if (!t) return;
+      var act = t.getAttribute('data-act');
       var id = parseInt(t.getAttribute('data-id'), 10);
-      if (t.getAttribute('data-act') === 'rename') app.renamePoint(id);
-      else if (t.getAttribute('data-act') === 'delete') app.deletePointConfirm(id);
+      var gid = parseInt(t.getAttribute('data-gid'), 10);
+      if (act === 'delete') app.deletePointConfirm(id);
+      else if (act === 'edit') { var p = app.state.points.find(function (x) { return x.id === id; }); if (p) app.openPointSheet(p); }
+      else if (act === 'addgroup') app.addGroup();
+      else if (act === 'grename') app.renameGroup(gid);
+      else if (act === 'gdelete') app.deleteGroup(gid);
+      else if (act === 'gvis') app.toggleGroup(gid);
+      else if (act === 'gcolor') app.cycleGroupColor(gid);
     });
+    // 지점 추가/편집 시트 (위임)
+    $('point-sheet-card').addEventListener('click', function (e) {
+      var t = e.target.closest('[data-act]'); if (!t) return;
+      var act = t.getAttribute('data-act');
+      if (act === 'group') { var gd = t.getAttribute('data-gid'); app.sheetSetGroup(gd === '' ? null : parseInt(gd, 10)); }
+      else if (act === 'addgroup') app.sheetAddGroup();
+      else if (act === 'color') app.sheetSetColor(t.getAttribute('data-color'));
+      else if (act === 'save') app.commitSheet();
+      else if (act === 'cancel') app.closeSheet();
+      else if (act === 'delete') app.deleteFromSheet();
+    });
+    $('point-sheet-backdrop').addEventListener('click', function () { app.closeSheet(); });
     // 갤러리 (위임)
     $('photos-grid').addEventListener('click', function (e) {
       var t = e.target.closest('[data-act="open"]'); if (!t) return;
@@ -784,15 +1146,20 @@
     });
   }
 
-  // ── 부트스트랩 (componentDidMount) ──
+  // ── 부트스트랩 ──
   function boot() {
     wire();
     app.render();
     app.initMapWhenReady();
     app.attachOrientation(true);
-    if (navigator.permissions) {
+    app.startAR();   // AR 렌더 루프 시작(현재 탭이 카메라)
+    if (navigator.permissions && navigator.permissions.query) {
+      // 이전에 허용한 권한은 자동으로 다시 켜서, 열자마자 실제 화면·위치가 나오게 한다.
       navigator.permissions.query({ name: 'geolocation' }).then(function (p) {
         if (p.state === 'granted') app.requestLocation();
+      }).catch(function () {});
+      navigator.permissions.query({ name: 'camera' }).then(function (p) {
+        if (p.state === 'granted') app.requestCamera();
       }).catch(function () {});
     }
   }
