@@ -13,8 +13,11 @@
 <meta property="og:title" content="토지이용 AR">
 <meta property="og:description" content="토지이용계획도를 카메라 위에 증강현실로 겹쳐 보는 웹앱">
 <meta property="og:type" content="website">
+<link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23a60739' d='M12 2a7 7 0 00-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 00-7-7z'/%3E%3Ccircle cx='12' cy='9' r='2.5' fill='white'/%3E%3C/svg%3E">
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='%23050506'/%3E%3Cpath fill='%23a60739' d='M12 3a6 6 0 00-6 6c0 4.5 6 11 6 11s6-6.5 6-11a6 6 0 00-6-6z'/%3E%3Ccircle cx='12' cy='9' r='2.2' fill='white'/%3E%3C/svg%3E">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -33,6 +36,24 @@
   @keyframes flash{0%{opacity:.85}100%{opacity:0}}
   @keyframes toastin{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
   @keyframes pindrop{from{opacity:0;transform:translate(-50%,-14px)}to{opacity:1;transform:translate(-50%,0)}}
+  @keyframes sheetup{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  @keyframes fadein{from{opacity:0}to{opacity:1}}
+  /* 홈 화면에 설치해 전체화면(standalone)으로 실행될 때만 안전영역만큼 UI를 안쪽으로.
+     black-translucent 상태바 + viewport-fit=cover라 이 여백이 없으면 상단 칩·나침반이
+     노치/다이내믹 아일랜드에, 하단 탭바가 홈 인디케이터에 가린다. #app 자식이 전부
+     position:absolute → 부모 padding으론 밀리지 않으므로(포함블록 = padding edge) 각
+     포지셔닝 요소에 직접 인셋을 준다. 브라우저 탭 실행에는 이 미디어쿼리가 안 걸려 무영향. */
+  @media all and (display-mode: standalone){
+    #sec-ar,#sec-map,#sec-list,#sec-gallery,#sec-perms{
+      top:env(safe-area-inset-top) !important;
+      bottom:calc(62px + env(safe-area-inset-bottom)) !important;
+    }
+    #app > nav{
+      height:calc(62px + env(safe-area-inset-bottom)) !important;
+      padding-bottom:env(safe-area-inset-bottom);
+    }
+    #toast{ bottom:calc(78px + env(safe-area-inset-bottom)) !important; }
+  }
 </style>
 </head>
 <body>
@@ -173,6 +194,16 @@
           <div id="demo-knob2" style="position:absolute;top:3px;left:22px;width:21px;height:21px;border-radius:50%;background:#fff;transition:.15s"></div>
         </div>
       </div>
+      <div id="pwa-install-card" style="display:none;cursor:pointer;align-items:center;gap:12px;background:#111317;border:1px solid rgba(166,7,57,.4);border-radius:16px;padding:15px">
+        <div style="width:38px;height:38px;border-radius:11px;background:rgba(166,7,57,.28);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 3v11m0 0l-4-4m4 4l4-4M5 20h14" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div id="pwa-card-title" style="font-size:14px;font-weight:800">홈 화면에 앱 추가</div>
+          <div id="pwa-card-desc" style="font-size:12px;color:rgba(255,255,255,.55);margin-top:3px;line-height:1.45">설치하면 전체 화면 앱처럼 빠르게 실행됩니다.</div>
+        </div>
+        <div id="pwa-card-arrow" style="color:rgba(255,255,255,.4);font-size:18px;flex-shrink:0">›</div>
+      </div>
       <div id="perm-cards" style="display:flex;flex-direction:column;gap:11px"></div>
       <div style="font-size:11px;color:rgba(255,255,255,.35);line-height:1.5;padding:4px 4px 20px">토지이용계획도 타일은 VWorld 공개 WMS 서비스를 이용합니다. HTTPS·모바일 크롬/사파리에서 카메라·위치·방향 센서가 동작합니다.</div>
     </div>
@@ -190,6 +221,12 @@
       <div id="viewer-close" style="cursor:pointer;flex:1;text-align:center;background:rgba(255,255,255,.1);border-radius:12px;padding:13px;font-size:14px;font-weight:700">닫기</div>
       <div id="viewer-delete" style="cursor:pointer;text-align:center;background:rgba(180,40,60,.25);border:1px solid rgba(220,80,100,.4);border-radius:12px;padding:13px 22px;font-size:14px;font-weight:700;color:#ff9aab">삭제</div>
     </div>
+  </div>
+
+  <!-- ══ 설치 안내 바텀시트 ══ -->
+  <div id="pwa-sheet" style="position:absolute;inset:0;z-index:80;display:none">
+    <div id="pwa-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,.58);animation:fadein .2s ease"></div>
+    <div id="pwa-card-sheet" style="position:absolute;left:0;right:0;bottom:0;max-height:88%;overflow-y:auto;background:#0d0e12;border-top:1px solid rgba(255,255,255,.1);border-radius:20px 20px 0 0;padding:8px 18px calc(18px + env(safe-area-inset-bottom));box-shadow:0 -12px 44px rgba(0,0,0,.65);animation:sheetup .28s cubic-bezier(.2,.8,.2,1)"></div>
   </div>
 
   <!-- ══ 하단 탭바 ══ -->
@@ -762,6 +799,355 @@
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
+})();
+</script>
+
+<!-- ══ PWA: 서비스 워커 + 설치/홈화면 추가 안내 ══ -->
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var LS_KEY = 'arcam_pwa_dismissed';           // 값: 타임스탬프(ms) 또는 'never'
+  var COOLDOWN = 14 * 24 * 3600 * 1000;          // 자동 노출 재대기: 14일
+  var deferredPrompt = null;                     // beforeinstallprompt 이벤트 보관
+  var shown = false;                             // 이번 방문 자동 노출 여부
+  var lateFallback = false;                       // 늦은 폴백 타이머 발동 여부
+  var installedNow = false;                        // 이번 세션에 방금 설치됨(appinstalled)
+  var sheetAuto = false;                           // 현재 시트가 자동 노출로 열렸는지
+  var P = null;
+
+  // ── 서비스 워커 등록 (HTTPS 보안 컨텍스트에서만) ──
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/sw.js').catch(function () {});
+    });
+  }
+
+  // ── 플랫폼 / 브라우저 감지 ──
+  function detect() {
+    var ua = navigator.userAgent || '';
+    // android-app:// referrer는 '다른 앱이 링크를 열어줌'일 뿐(카톡→크롬 등)이라
+    // 설치 여부와 무관 → 오판 방지 위해 쓰지 않는다. 실제 설치 실행은 아래 둘로 잡힌다.
+    var standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+                     window.navigator.standalone === true;
+    var isIOS = (/iP(hone|od|ad)/.test(ua) ||
+                 (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) &&
+                !window.MSStream;
+    var isAndroid = /Android/.test(ua);
+    // 한국권 인앱 브라우저 / 안드로이드 시스템 웹뷰
+    var inApp = /KAKAOTALK|NAVER\(inapp|; ?wv\)|Instagram|FBAN|FBAV|FB_IAB|Line\/|DaumApps\/|Snapchat|TwitterAndroid|everytimeApp|zumapp|band\//i.test(ua);
+    var isKakao = /KAKAOTALK/i.test(ua);
+    var isEdge = /Edg(A|iOS|\/)/.test(ua);   // EdgA(안드로이드)·EdgiOS·Edg/(데스크톱)
+    var isSamsung = /SamsungBrowser/.test(ua);
+    var isFirefox = /Firefox|FxiOS/.test(ua);
+    var isOpera = /OPR\/|OPT\//.test(ua);
+    var isWhale = /Whale/.test(ua);
+    var isChrome = /Chrome\//.test(ua) && !isEdge && !isSamsung && !isFirefox && !isOpera && !isWhale && !inApp;
+    var isSafari = isIOS && /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS|Whale|GSA|DuckDuckGo/.test(ua);
+    return {
+      ua: ua, standalone: standalone, isIOS: isIOS, isAndroid: isAndroid, inApp: inApp,
+      isKakao: isKakao, isEdge: isEdge, isSamsung: isSamsung, isChrome: isChrome, isSafari: isSafari
+    };
+  }
+
+  // ── 어떤 안내를 보여줄지 결정 ──
+  function pickKind() {
+    if (!P) P = detect();
+    if (P.standalone) return null;                 // 이미 앱으로 실행 중
+    if (P.isIOS) return P.inApp ? 'ios-inapp' : (P.isSafari ? 'ios-safari' : 'ios-other');
+    if (P.isAndroid) {
+      if (P.inApp) return 'inapp';                 // 인앱 웹뷰 → 크롬으로 열기
+      if (deferredPrompt) return 'android-install';
+      if (P.isChrome) return 'android-manual';
+      return 'android-chrome';                      // 삼성/파폭 등 → 크롬 권장
+    }
+    return deferredPrompt ? 'desktop-install' : null;
+  }
+
+  // ── 현재 URL을 크롬으로 여는 인텐트 ──
+  function chromeIntent() {
+    var path = location.pathname + location.search;
+    var fb = encodeURIComponent(location.href);
+    return 'intent://' + location.host + path +
+           '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + fb + ';end';
+  }
+
+  // ── 다시 보지 않기 / 쿨다운 판정 ──
+  function suppressed() {
+    try {
+      var v = localStorage.getItem(LS_KEY);
+      if (!v) return false;
+      if (v === 'never') return true;
+      var t = parseInt(v, 10);
+      return t ? (Date.now() - t < COOLDOWN) : false;
+    } catch (e) { return false; }
+  }
+  function remember(val) { try { localStorage.setItem(LS_KEY, val); } catch (e) {} }
+
+  // ── 아이콘 SVG ──
+  var IC = {
+    share: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 3v13M12 3l-3.5 3.5M12 3l3.5 3.5" stroke="#e5688f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 11v8a1 1 0 001 1h10a1 1 0 001-1v-8" stroke="#e5688f" stroke-width="2" stroke-linecap="round"/></svg>',
+    plus: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="4.5" stroke="#e5688f" stroke-width="2"/><path d="M12 9v6M9 12h6" stroke="#e5688f" stroke-width="2" stroke-linecap="round"/></svg>',
+    menu: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="5" r="1.7" fill="#e5688f"/><circle cx="12" cy="12" r="1.7" fill="#e5688f"/><circle cx="12" cy="19" r="1.7" fill="#e5688f"/></svg>',
+    chrome: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#fff" stroke-width="2"/><circle cx="12" cy="12" r="3.4" stroke="#fff" stroke-width="2"/><path d="M12 8.6H21M8.9 13.7L4.4 6M15.1 13.7L10.6 21.5" stroke="#fff" stroke-width="1.6"/></svg>',
+    down: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 3v11m0 0l-4-4m4 4l4-4M5 20h14" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+  };
+
+  // ── HTML 조각 ──
+  function step(n, html) {
+    return '<div style="display:flex;align-items:center;gap:11px;padding:9px 0">' +
+      '<div style="width:24px;height:24px;border-radius:50%;background:rgba(166,7,57,.9);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + n + '</div>' +
+      '<div style="font-size:13.5px;line-height:1.45;color:rgba(255,255,255,.85)">' + html + '</div></div>';
+  }
+  function chip(inner) {
+    return '<span style="display:inline-flex;vertical-align:middle;align-items:center;justify-content:center;width:26px;height:26px;border-radius:7px;background:rgba(166,7,57,.16);border:1px solid rgba(166,7,57,.4);margin:0 2px">' + inner + '</span>';
+  }
+  function btnPrimary(act, icon, label) {
+    return '<div data-act="' + act + '" style="cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;background:#a60739;border-radius:13px;padding:14px;font-size:14.5px;font-weight:800;color:#fff">' +
+      (icon ? icon : '') + '<span>' + label + '</span></div>';
+  }
+  function btnGhost(act, label) {
+    return '<div data-act="' + act + '" style="cursor:pointer;text-align:center;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:13px;padding:13px;font-size:14px;font-weight:700;color:#f4f4f5">' + label + '</div>';
+  }
+  function header(icon, title, sub) {
+    return '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">' +
+      '<div style="width:44px;height:44px;border-radius:13px;background:rgba(166,7,57,.9);display:flex;align-items:center;justify-content:center;flex-shrink:0">' + icon + '</div>' +
+      '<div style="min-width:0"><div style="font-size:17px;font-weight:900;line-height:1.2">' + title + '</div>' +
+      '<div style="font-size:12.5px;color:rgba(255,255,255,.55);margin-top:2px;line-height:1.35">' + sub + '</div></div></div>';
+  }
+  function footer() {
+    return '<div style="display:flex;gap:10px;margin-top:14px;align-items:center">' +
+      '<div data-act="close" style="flex:1;cursor:pointer;text-align:center;padding:11px;font-size:13px;font-weight:700;color:rgba(255,255,255,.6)">닫기</div>' +
+      '<div data-act="never" style="cursor:pointer;text-align:center;padding:11px 14px;font-size:12.5px;font-weight:600;color:rgba(255,255,255,.38)">다시 보지 않기</div></div>';
+  }
+  var HANDLE = '<div style="width:38px;height:4px;border-radius:2px;background:rgba(255,255,255,.2);margin:6px auto 16px"></div>';
+
+  // ── 종류별 시트 본문 ──
+  function sheetBody(kind) {
+    var h;
+    if (kind === 'ios-safari') {
+      return HANDLE +
+        header(IC.down, '홈 화면에 추가', 'Safari에서 아래 순서대로 추가하면 전체 화면 앱처럼 실행돼요.') +
+        step(1, '하단(또는 상단)의 <b>공유</b> ' + chip(IC.share) + ' 버튼을 누르세요.') +
+        step(2, '메뉴에서 <b>‘홈 화면에 추가’</b> ' + chip(IC.plus) + ' 를 선택하세요.') +
+        step(3, '오른쪽 위 <b>‘추가’</b>를 누르면 홈 화면에 아이콘이 생겨요.') +
+        footer();
+    }
+    if (kind === 'ios-other') {
+      // iOS의 비 Safari 브라우저(Chrome·Edge·Firefox 등). 공유→홈화면 추가는 되지만
+      // PWA는 Safari에서 가장 안정적이라 그쪽을 권한다.
+      return HANDLE +
+        header(IC.down, '홈 화면에 추가', '브라우저 공유 메뉴로 홈 화면에 추가하면 전체 화면처럼 실행돼요.') +
+        step(1, '화면 아래(또는 위)의 <b>공유</b> ' + chip(IC.share) + ' 버튼을 누르세요.') +
+        step(2, '<b>‘홈 화면에 추가’</b> ' + chip(IC.plus) + ' 를 선택하세요.') +
+        step(3, '메뉴에 없다면, 가장 안정적인 <b>Safari</b>에서 이 페이지를 열어 추가하세요.') +
+        '<div style="margin-top:14px">' + btnGhost('copy', '링크 복사하기') + '</div>' +
+        footer();
+    }
+    if (kind === 'ios-inapp') {
+      // iOS에는 intent://가 없다. 카카오톡은 kakaotalk://web/openExternal 이 유일한 원탭 탈출.
+      var kbtn = P.isKakao ? (btnPrimary('kakao-out', IC.share, '기본 브라우저로 열기') + '<div style="height:8px"></div>') : '';
+      return HANDLE +
+        header(IC.share, 'Safari에서 열어 주세요', '인앱 브라우저에서는 홈 화면 추가·카메라가 제한됩니다.') +
+        kbtn +
+        step(1, '오른쪽 위 <b>공유·메뉴</b> 버튼을 누르세요.') +
+        step(2, '<b>‘Safari로 열기’</b>(또는 기본 브라우저로 열기)를 선택하세요.') +
+        step(3, 'Safari에서 다시 이 페이지의 <b>‘홈 화면에 추가’</b> 안내를 따르세요.') +
+        '<div style="margin-top:14px">' + btnGhost('copy', '링크 복사하기') + '</div>' +
+        footer();
+    }
+    if (kind === 'android-install') {
+      return HANDLE +
+        header(IC.down, '앱으로 설치하기', '홈 화면에 추가하면 전체 화면으로 더 빠르게 실행돼요.') +
+        '<div style="font-size:13px;color:rgba(255,255,255,.6);line-height:1.5;margin:2px 2px 14px">설치해도 저장 공간을 거의 쓰지 않으며, 언제든 앱을 길게 눌러 삭제할 수 있어요.</div>' +
+        btnPrimary('install', IC.down, '홈 화면에 설치') +
+        footer();
+    }
+    if (kind === 'android-manual') {
+      return HANDLE +
+        header(IC.down, '홈 화면에 앱 추가', '크롬 메뉴에서 직접 추가할 수 있어요.') +
+        step(1, '오른쪽 위 <b>메뉴</b> ' + chip(IC.menu) + ' 를 누르세요.') +
+        step(2, '<b>‘홈 화면에 추가’</b> 또는 <b>‘앱 설치’</b>를 선택하세요.') +
+        step(3, '<b>‘추가/설치’</b>를 누르면 완료돼요.') +
+        footer();
+    }
+    if (kind === 'android-chrome') {
+      h = P.isSamsung ? '삼성 인터넷' : (P.isEdge ? 'Edge' : '현재 브라우저');
+      return HANDLE +
+        header(IC.chrome, '크롬 브라우저를 권장해요', '설치·카메라·센서 기능은 <b>Chrome</b>에서 가장 안정적으로 동작합니다.') +
+        '<div style="font-size:13px;color:rgba(255,255,255,.62);line-height:1.55;margin:2px 2px 14px">지금 ' + h + '에서 보고 계세요. 아래 버튼으로 크롬에서 열거나, ' + h + '의 메뉴에서 <b>‘홈 화면에 추가’</b>로 설치할 수도 있어요.</div>' +
+        btnPrimary('open-chrome', IC.chrome, '크롬으로 열기') +
+        '<div style="margin-top:10px">' + btnGhost('copy', '링크 복사하기') + '</div>' +
+        footer();
+    }
+    if (kind === 'inapp') {
+      h = P.inApp && /KAKAOTALK/i.test(P.ua) ? '카카오톡' : '인앱';
+      return HANDLE +
+        header(IC.chrome, '크롬으로 열어 주세요', h + ' 브라우저에서는 설치·카메라·위치 기능이 제한됩니다.') +
+        btnPrimary('open-chrome', IC.chrome, '크롬으로 열기') +
+        '<div style="font-size:12.5px;color:rgba(255,255,255,.5);line-height:1.55;margin:12px 2px 0">버튼이 동작하지 않으면, 오른쪽 위 <b>메뉴</b> ' + chip(IC.menu) + ' 에서 <b>‘다른 브라우저로 열기’</b>를 선택하세요.</div>' +
+        '<div style="margin-top:12px">' + btnGhost('copy', '링크 복사하기') + '</div>' +
+        footer();
+    }
+    // desktop-install
+    return HANDLE +
+      header(IC.down, '앱으로 설치하기', '주소창 오른쪽의 설치 아이콘으로도 설치할 수 있어요.') +
+      btnPrimary('install', IC.down, '설치') +
+      footer();
+  }
+
+  // ── 시트 열기/닫기 ──
+  function openSheet(auto) {
+    var kind = pickKind();
+    if (!kind) return;
+    var card = $('pwa-card-sheet');
+    if (!card) return;
+    sheetAuto = !!auto;
+    card.innerHTML = sheetBody(kind);
+    card.style.animation = 'none'; void card.offsetWidth; card.style.animation = 'sheetup .28s cubic-bezier(.2,.8,.2,1)';
+    $('pwa-sheet').style.display = 'block';
+  }
+  // 이미 열려 있는 시트의 내용만 현재 상태로 다시 그린다(애니메이션·플래그 유지).
+  function refreshSheet() {
+    var s = $('pwa-sheet');
+    if (!s || s.style.display !== 'block') return;
+    var kind = pickKind(); if (!kind) return;
+    var card = $('pwa-card-sheet'); if (card) card.innerHTML = sheetBody(kind);
+  }
+  function isSheetOpen() { var s = $('pwa-sheet'); return !!(s && s.style.display === 'block'); }
+  function closeSheet() { var s = $('pwa-sheet'); if (s) s.style.display = 'none'; }
+
+  function doInstall() {
+    if (!deferredPrompt) { closeSheet(); return; }
+    var dp = deferredPrompt;
+    deferredPrompt = null;
+    closeSheet();
+    dp.prompt();
+    if (dp.userChoice && dp.userChoice.then) {
+      dp.userChoice.then(function (c) {
+        if (c && c.outcome === 'accepted') remember('never');
+        else remember(String(Date.now()));   // 거절 시 14일 쿨다운(매 방문 재나그 방지)
+        updateCard();
+      }).catch(function () {});
+    }
+  }
+  function openChrome() { try { location.href = chromeIntent(); } catch (e) {} }
+  function openKakaoExternal() { try { location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href); } catch (e) {} }
+  function copyLink(el) {
+    var url = location.href, done = function () { if (el) { var t = el.textContent; el.textContent = '복사됨 ✓'; setTimeout(function () { el.textContent = t; }, 1600); } };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(done).catch(function () { legacyCopy(url, done); });
+    } else legacyCopy(url, done);
+  }
+  function legacyCopy(url, cb) {
+    try {
+      var i = document.createElement('input');
+      i.value = url; i.style.position = 'fixed'; i.style.opacity = '0';
+      document.body.appendChild(i); i.select(); i.setSelectionRange(0, url.length);
+      document.execCommand('copy'); document.body.removeChild(i); if (cb) cb();
+    } catch (e) {}
+  }
+
+  // ── 설정 탭의 진입 카드 갱신 ──
+  function updateCard() {
+    var card = $('pwa-install-card'); if (!card) return;
+    P = detect();
+    var title = $('pwa-card-title'), desc = $('pwa-card-desc'), arrow = $('pwa-card-arrow');
+    if (P.standalone || installedNow) {
+      // 이미 앱으로 실행 중이거나(standalone), 이 세션에 방금 설치를 마친 경우.
+      card.style.display = 'flex'; card.style.cursor = 'default';
+      card.style.borderColor = 'rgba(47,158,111,.45)';
+      if (title) title.textContent = P.standalone ? '앱으로 실행 중' : '설치 완료';
+      if (desc) desc.textContent = P.standalone ? '홈 화면 앱에서 실행되고 있습니다.' : '홈 화면 아이콘으로 실행하세요.';
+      if (arrow) arrow.style.display = 'none';
+      card._kind = null;
+      return;
+    }
+    var kind = pickKind();
+    if (!kind) { card.style.display = 'none'; return; }
+    var meta = {
+      'android-install': ['홈 화면에 앱 설치', '전체 화면 앱처럼 빠르게 실행됩니다.'],
+      'android-manual':  ['홈 화면에 앱 추가', '크롬 메뉴에서 홈 화면에 추가하세요.'],
+      'android-chrome':  ['크롬 브라우저 권장', '설치·카메라 기능은 크롬에서 가장 안정적입니다.'],
+      'inapp':           ['크롬으로 열기', '인앱 브라우저에서는 일부 기능이 제한됩니다.'],
+      'ios-safari':      ['홈 화면에 추가', 'Safari 공유 버튼으로 홈 화면에 추가하세요.'],
+      'ios-other':       ['홈 화면에 추가', '브라우저 공유 버튼으로 홈 화면에 추가하세요.'],
+      'ios-inapp':       ['Safari로 열기', '인앱 브라우저에서는 홈 화면 추가가 안 됩니다.'],
+      'desktop-install': ['앱으로 설치', '전체 화면 앱처럼 실행됩니다.']
+    }[kind] || ['홈 화면에 앱 추가', '설치하면 전체 화면 앱처럼 빠르게 실행됩니다.'];
+    card.style.display = 'flex'; card.style.cursor = 'pointer';
+    card.style.borderColor = 'rgba(166,7,57,.4)';
+    if (title) title.textContent = meta[0];
+    if (desc) desc.textContent = meta[1];
+    if (arrow) arrow.style.display = 'block';
+    card._kind = kind;
+  }
+
+  // ── 자동 노출 (방문당 1회, 쿨다운·다시보지않기 존중) ──
+  function maybeAutoShow() {
+    if (shown) return;
+    var kind = pickKind();
+    if (!kind) return;
+    if (suppressed()) return;
+    // Chrome Android는 네이티브 원탭 프롬프트(beforeinstallprompt)를 우선한다. 이른
+    // 타이머가 수동 안내(android-manual)를 먼저 띄워 원탭 설치를 가리지 않도록,
+    // 늦은 폴백 타이머 전까지는 이 종류의 자동 노출을 건너뛴다.
+    if (kind === 'android-manual' && !lateFallback) return;
+    shown = true;
+    openSheet(true);
+  }
+
+  // ── 이벤트 배선 ──
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    updateCard();
+    // 늦게 도착해 이미 수동 안내(android-manual) 시트가 떠 있으면, 원탭 설치로 교체.
+    if (isSheetOpen()) refreshSheet();
+    else maybeAutoShow();
+  });
+  window.addEventListener('appinstalled', function () {
+    installedNow = true;
+    deferredPrompt = null;
+    remember('never');
+    closeSheet();
+    updateCard();
+  });
+
+  function wirePwa() {
+    P = detect();
+    updateCard();
+
+    var card = $('pwa-install-card');
+    if (card) card.addEventListener('click', function () { if (!P.standalone && !installedNow) openSheet(false); });
+
+    var bd = $('pwa-backdrop');
+    // 백드롭(딤 영역) 탭도 자동 노출이었으면 '닫기'와 같은 14일 쿨다운을 기록해
+    // 매 방문 재노출을 막는다(설정 카드에서 수동으로 연 경우엔 기록하지 않음).
+    if (bd) bd.addEventListener('click', function () { var a = sheetAuto; closeSheet(); if (a) remember(String(Date.now())); });
+
+    var sheet = $('pwa-card-sheet');
+    if (sheet) sheet.addEventListener('click', function (e) {
+      var t = e.target.closest ? e.target.closest('[data-act]') : null;
+      if (!t) return;
+      var act = t.getAttribute('data-act');
+      if (act === 'install') doInstall();
+      else if (act === 'open-chrome') openChrome();
+      else if (act === 'kakao-out') openKakaoExternal();
+      else if (act === 'copy') copyLink(t);
+      else if (act === 'close') { closeSheet(); remember(String(Date.now())); }
+      else if (act === 'never') { closeSheet(); remember('never'); }
+    });
+
+    // 안정적으로 판정되는 안내(iOS·인앱·비크롬 안드로이드)는 잠시 뒤 자동 노출.
+    // 크롬 안드로이드는 beforeinstallprompt(원탭)를 기다렸다가 노출하고,
+    // 이벤트가 끝내 안 오면 늦은 폴백 타이머에서 수동 안내를 띄운다.
+    setTimeout(maybeAutoShow, 2800);
+    setTimeout(function () { lateFallback = true; maybeAutoShow(); }, 9000);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wirePwa);
+  else wirePwa();
 })();
 </script>
 </body>

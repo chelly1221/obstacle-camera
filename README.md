@@ -20,6 +20,27 @@
 **데모 모드**: 권한 없이도 가상 위치(서울시청)와 방향 슬라이더로 AR을 미리 볼 수 있습니다.
 실기기에서 카메라·위치·방향 권한을 허용하면 자동으로 실측 모드로 전환됩니다.
 
+## PWA · 설치 안내
+
+이 앱은 **설치형 PWA**입니다. 홈 화면에 추가하면 주소창 없는 전체 화면으로 실행되고,
+서비스 워커가 앱 셸을 캐시해 오프라인/약전계에서도 화면이 즉시 뜹니다.
+
+- **웹 앱 매니페스트**(`html/manifest.webmanifest`): 이름·아이콘(192·512 PNG, `any`/`maskable` 분리)·
+  `display: standalone`·테마색. Chrome 안드로이드 설치 요건을 충족합니다.
+- **서비스 워커**(`html/sw.js`): 같은 출처 앱 셸 + Leaflet/Pretendard CDN을 캐시(cache-first),
+  페이지 이동은 network-first(오프라인 시 캐시된 셸). 지도 타일(OSM·VWorld)은 캐시하지 않습니다.
+  ※ Chrome 108+에선 설치에 서비스 워커가 필수가 아니므로, 설치를 이 파일에 의존시키지 않습니다.
+- **아이콘**(`html/icons/`): 순수 파이썬으로 생성한 PNG(다크 플레이트 + 위치핀). `apple-touch-icon`은
+  불투명 180×180.
+- **설치/홈추가 안내 UX**(`index.html` 하단 `<script>`): 플랫폼을 감지해 상황별 바텀시트를 띄웁니다.
+  - **안드로이드 · 크롬**: `beforeinstallprompt`를 잡아 **원탭 설치** 버튼(네이티브 프롬프트).
+  - **안드로이드 · 크롬 아님**(삼성인터넷·파폭 등): **크롬 사용 권장** + `intent://…;package=com.android.chrome`로 크롬 열기.
+  - **인앱 브라우저**(카카오톡·네이버·인스타 등 웹뷰): 기능 제한 안내 + **크롬으로 열기**/‘다른 브라우저로 열기’. iOS 카카오톡은 `kakaotalk://web/openExternal` 원탭 탈출.
+  - **iOS · Safari**: **‘공유 → 홈 화면에 추가’** 단계 안내.
+  - 이미 설치되어 standalone으로 실행 중이면 안내를 숨깁니다. ‘설정’ 탭에서 언제든 다시 열 수 있습니다.
+- **standalone 안전영역**: 홈 화면 실행 시에만(`@media (display-mode: standalone)`) `env(safe-area-inset-*)`
+  여백을 줘 상단 칩·나침반이 노치에, 하단 탭바가 홈 인디케이터에 가리지 않게 합니다. 브라우저 탭 실행에는 영향 없음.
+
 ## 구현 메모
 
 - 원본은 claude.ai Design의 **DC(Design Component)** 포맷(프리뷰용 `support.js` 런타임 + React 의존)
@@ -59,9 +80,16 @@ docker compose up -d
 #
 docker compose -f /srv/proxy/docker-compose.yml exec caddy caddy reload --config /etc/caddy/Caddyfile
 
-# 3) 내용만 바꿨을 때: 파일은 read-only 마운트라 재기동 없이 즉시 반영됩니다.
-#    (index.html은 no-cache 헤더라 새로고침 즉시 최신 버전 로드)
+# 3) html/ 내용만 바꿨을 때: 디렉터리 마운트라 재기동 없이 즉시 반영됩니다.
+#    (index.html·sw.js·manifest는 no-cache 헤더라 새로고침 즉시 최신 버전 로드)
 ```
+
+> **nginx/default.conf 를 고쳤다면** 컨테이너 재시작이 필요합니다. 단일 파일 바인드
+> 마운트는 편집 시 inode가 바뀌어 `nginx -s reload`만으로는 새 설정이 반영되지 않습니다
+> (Caddyfile과 같은 함정). `docker restart arcam_app` 로 재시작하세요.
+
+> **서비스 워커 갱신**: `sw.js`의 `CACHE` 버전 문자열을 올리면 다음 방문 때 옛 캐시가
+> 정리되고 새 셸을 받습니다. `sw.js`는 `no-cache`로 서빙되어 워커 자체는 항상 최신을 확인합니다.
 
 `arcam.3chan.kr` DNS는 이미 이 VM(`5.78.221.121`)을 가리키는 와일드카드로 설정되어 있습니다.
 
@@ -70,9 +98,12 @@ docker compose -f /srv/proxy/docker-compose.yml exec caddy caddy reload --config
 ```
 obstacle-camera/
 ├─ html/
-│  └─ index.html          # 앱 전체 (단일 파일)
+│  ├─ index.html            # 앱 전체 (단일 파일) + PWA 설치/홈추가 안내
+│  ├─ manifest.webmanifest  # 웹 앱 매니페스트
+│  ├─ sw.js                 # 서비스 워커 (앱 셸 오프라인 캐시)
+│  └─ icons/                # PWA 아이콘(192·512 any/maskable) + apple-touch-icon
 ├─ nginx/
-│  └─ default.conf        # 정적 서빙 + 캐시/보안 헤더
-├─ docker-compose.yml     # nginx + web 네트워크(arcam-app 별칭)
+│  └─ default.conf          # 정적 서빙 + 캐시/보안 헤더 (sw.js·매니페스트·아이콘 포함)
+├─ docker-compose.yml       # nginx + web 네트워크(arcam-app 별칭)
 └─ README.md
 ```
