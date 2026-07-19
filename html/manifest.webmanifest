@@ -9,8 +9,8 @@
   "dir": "ltr",
   "display": "standalone",
   "display_override": ["standalone", "fullscreen"],
-  "orientation": "portrait-primary",
-  "background_color": "#050506",
+  "orientation": "any",
+  "background_color": "#08090b",
   "theme_color": "#08090b",
   "categories": ["utilities", "navigation", "photo"],
   "icons": [
