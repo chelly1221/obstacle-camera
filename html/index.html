@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>토지이용 AR · 증강현실 토지이용계획도</title>
 <meta name="description" content="토지이용계획도(VWorld lt_c_lhblpn)를 카메라 화면 위에 증강현실로 겹쳐 보여주는 웹앱. GPS·나침반으로 지점의 거리·방위를 실시간 표시합니다.">
-<meta name="theme-color" content="#050506">
+<meta name="theme-color" content="#08090b">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="토지이용 AR">
@@ -23,7 +23,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
   *{box-sizing:border-box}
-  html,body{margin:0;padding:0;height:100%;background:#050506;font-family:"Pretendard Variable",Pretendard,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#050506;font-family:"Pretendard Variable",Pretendard,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
   a{color:#e5688f;text-decoration:none}
   a:hover{color:#f19bb5}
   input[type=range]{-webkit-appearance:none;appearance:none;background:transparent}
@@ -38,29 +38,33 @@
   @keyframes pindrop{from{opacity:0;transform:translate(-50%,-14px)}to{opacity:1;transform:translate(-50%,0)}}
   @keyframes sheetup{from{transform:translateY(100%)}to{transform:translateY(0)}}
   @keyframes fadein{from{opacity:0}to{opacity:1}}
-  /* 홈 화면에 설치해 전체화면(standalone)으로 실행될 때만 안전영역만큼 UI를 안쪽으로.
-     black-translucent 상태바 + viewport-fit=cover라 이 여백이 없으면 상단 칩·나침반이
-     노치/다이내믹 아일랜드에, 하단 탭바가 홈 인디케이터에 가린다. #app 자식이 전부
-     position:absolute → 부모 padding으론 밀리지 않으므로(포함블록 = padding edge) 각
-     포지셔닝 요소에 직접 인셋을 준다. 브라우저 탭 실행에는 이 미디어쿼리가 안 걸려 무영향. */
+  /* 하단 탭바가 항상 화면에 보이게 — 브라우저 탭이든 홈화면(standalone) 실행이든 공통 적용.
+     탭바 높이·섹션 하단·토스트를 안전영역(OS 제스처바/홈 인디케이터)만큼 안쪽으로 밀어
+     모바일 브라우저의 하단 UI·제스처 영역에 탭이 가리거나 눌리지 않게 한다. env()는 인셋이
+     없으면 0이라 데스크톱·구형 브라우저엔 무영향. #app 자식이 전부 position:absolute →
+     부모 padding으론 안 밀리므로(포함블록 = padding edge) 각 포지셔닝 요소에 직접 인셋을 준다. */
+  #app > nav{
+    height:calc(62px + env(safe-area-inset-bottom)) !important;
+    padding-bottom:env(safe-area-inset-bottom) !important;
+  }
+  #sec-ar,#sec-map,#sec-list,#sec-gallery,#sec-perms{
+    bottom:calc(62px + env(safe-area-inset-bottom)) !important;
+  }
+  #toast{ bottom:calc(78px + env(safe-area-inset-bottom)) !important; }
+  /* standalone(홈화면 전체화면)에선 상단 노치/다이내믹 아일랜드도 피하도록 섹션 상단 인셋 추가.
+     black-translucent 상태바 + viewport-fit=cover라 이 여백이 없으면 상단 칩·나침반이 가린다. */
   @media all and (display-mode: standalone){
     #sec-ar,#sec-map,#sec-list,#sec-gallery,#sec-perms{
       top:env(safe-area-inset-top) !important;
-      bottom:calc(62px + env(safe-area-inset-bottom)) !important;
     }
-    #app > nav{
-      height:calc(62px + env(safe-area-inset-bottom)) !important;
-      padding-bottom:env(safe-area-inset-bottom);
-    }
-    #toast{ bottom:calc(78px + env(safe-area-inset-bottom)) !important; }
   }
 </style>
 </head>
 <body>
-<div id="app" style="width:100%;max-width:440px;min-height:100vh;margin:0 auto;background:#050506;color:#f4f4f5;position:relative;overflow:hidden;display:flex;flex-direction:column;height:100vh;height:100dvh">
+<div id="app" style="width:100%;max-width:440px;min-height:100vh;min-height:100dvh;margin:0 auto;background:#050506;color:#f4f4f5;position:relative;overflow:hidden;display:flex;flex-direction:column;height:100vh;height:100dvh">
 
   <!-- ══ AR 카메라 화면 ══ -->
-  <section id="sec-ar" style="position:absolute;inset:0 0 62px 0;overflow:hidden;background:#0a0b0d;display:block">
+  <section id="sec-ar" style="position:absolute;z-index:1;inset:0 0 62px 0;overflow:hidden;background:#0a0b0d;display:block">
     <video id="video" autoplay playsinline muted style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0"></video>
     <!-- 카메라 꺼짐 안내 (권한 전/거부 시) -->
     <div id="backdrop" style="position:absolute;inset:0;opacity:1;background:radial-gradient(120% 90% at 50% 20%,#14161c 0%,#0a0b0d 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:32px;text-align:center">
@@ -121,7 +125,7 @@
   </section>
 
   <!-- ══ 지도(설정) 화면 ══ -->
-  <section id="sec-map" style="position:absolute;inset:0 0 62px 0;flex-direction:column;background:#0a0b0d;display:none">
+  <section id="sec-map" style="position:absolute;z-index:1;inset:0 0 62px 0;flex-direction:column;background:#0a0b0d;display:none">
     <div style="padding:14px 16px 10px;border-bottom:1px solid rgba(255,255,255,.07)">
       <div style="font-size:17px;font-weight:800">토지이용계획도 지도</div>
       <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:2px">지도를 눌러 지점을 찍으세요 · 마커를 눌러 선택</div>
@@ -152,7 +156,7 @@
   </section>
 
   <!-- ══ 지점 목록 ══ -->
-  <section id="sec-list" style="position:absolute;inset:0 0 62px 0;flex-direction:column;background:#0a0b0d;display:none">
+  <section id="sec-list" style="position:absolute;z-index:1;inset:0 0 62px 0;flex-direction:column;background:#0a0b0d;display:none">
     <div style="padding:14px 16px 10px;border-bottom:1px solid rgba(255,255,255,.07)">
       <div style="font-size:17px;font-weight:800">저장된 지점</div>
       <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:2px">그룹별 · 내 위치 기준 거리·방위</div>
@@ -164,19 +168,20 @@
   </section>
 
   <!-- ══ 갤러리 ══ -->
-  <section id="sec-gallery" style="position:absolute;inset:0 0 62px 0;flex-direction:column;background:#0a0b0d;display:none">
+  <section id="sec-gallery" style="position:absolute;z-index:1;inset:0 0 62px 0;flex-direction:column;background:#0a0b0d;display:none">
     <div style="padding:14px 16px 10px;border-bottom:1px solid rgba(255,255,255,.07)">
       <div style="font-size:17px;font-weight:800">촬영 사진</div>
       <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:2px">증강현실 정보가 함께 저장됩니다</div>
     </div>
     <div style="flex:1;overflow-y:auto;padding:12px">
-      <div id="photos-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+      <div id="photos-toolbar" style="margin-bottom:10px;min-height:34px"></div>
+      <div id="photos-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px"></div>
       <div id="photos-empty" style="display:none;text-align:center;padding:50px 20px;color:rgba(255,255,255,.4);font-size:13px">아직 촬영한 사진이 없습니다.<br>카메라 화면의 셔터를 눌러보세요.</div>
     </div>
   </section>
 
   <!-- ══ 설정/권한 ══ -->
-  <section id="sec-perms" style="position:absolute;inset:0 0 62px 0;flex-direction:column;background:#0a0b0d;overflow-y:auto;display:none">
+  <section id="sec-perms" style="position:absolute;z-index:1;inset:0 0 62px 0;flex-direction:column;background:#0a0b0d;overflow-y:auto;display:none">
     <div style="padding:14px 16px 10px;border-bottom:1px solid rgba(255,255,255,.07)">
       <div style="font-size:17px;font-weight:800">권한 및 모드</div>
       <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:2px">실시간 AR을 쓰려면 아래 권한이 필요합니다</div>
@@ -224,7 +229,7 @@
   </div>
 
   <!-- ══ 하단 탭바 ══ -->
-  <nav style="position:absolute;left:0;right:0;bottom:0;height:62px;background:rgba(8,9,11,.94);backdrop-filter:blur(14px);border-top:1px solid rgba(255,255,255,.09);display:flex;z-index:50">
+  <nav style="position:absolute;left:0;right:0;bottom:0;height:62px;background:#08090b;border-top:1px solid rgba(255,255,255,.09);display:flex;z-index:50">
     <div id="tab-ar" data-tab="ar" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:#a60739">
       <div style="width:22px;height:22px;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="13" rx="3" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12.5" r="3.2" stroke="currentColor" stroke-width="2"/><path d="M8 6l1.5-2h5L16 6" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></div>
       <div style="font-size:10px;font-weight:700">카메라</div>
@@ -260,7 +265,7 @@
   // 헤딩 적응형 필터(One Euro): 정지 시 지터 억제, 회전 시 지연 최소화.
   var ONE_EURO = { minCutoff: 0.45, beta: 0.12, dCutoff: 1.0 };
   var DEFAULT_VIEW = { lat: 36.5, lon: 127.85, zoom: 7 }; // GPS 확보 전 지도 초기 위치(대한민국 전역)
-  var LS = { points: 'arcam_points_v1', groups: 'arcam_groups_v1', view: 'arcam_view_v1' };
+  var LS = { points: 'arcam_points_v1', groups: 'arcam_groups_v1', view: 'arcam_view_v1', hidden: 'arcam_hidden_groups_v1' };
 
   // VWorld 토지이용계획도 오버레이 키. 비워두면 원본 디자인과 동일하게 공개 프록시
   // (map.vworld.kr/proxy.do)를 씁니다 — 호출량 제한이 있어 간헐적으로 타일이 빌 수 있습니다.
@@ -275,15 +280,100 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
+  function fmtTime(ts) {
+    try { return new Date(ts).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }); }
+    catch (e) { return ''; }
+  }
+  function mapServerPhoto(p) { return { id: p.id, ts: p.ts, time: fmtTime(p.ts), w: p.w, h: p.h, bytes: p.bytes }; }
+
+  // ── 미완료 사진 업로드 durable 큐(IndexedDB) — 오프라인/새로고침에도 방금 찍은 사진을 잃지 않게 ──
+  // blob(원본·썸네일)을 그대로 저장한다. localStorage로는 용량이 부족하다.
+  var _idb = null;
+  function idbOpen() {
+    if (_idb) return _idb;
+    _idb = new Promise(function (resolve, reject) {
+      try {
+        var rq = indexedDB.open('arcam-photos', 1);
+        rq.onupgradeneeded = function () { var db = rq.result; if (!db.objectStoreNames.contains('pending')) db.createObjectStore('pending', { keyPath: 'localId' }); };
+        rq.onsuccess = function () { resolve(rq.result); };
+        rq.onerror = function () { reject(rq.error); };
+      } catch (e) { reject(e); }
+    });
+    return _idb;
+  }
+  function idbPut(rec) { return idbOpen().then(function (db) { return new Promise(function (res, rej) { var tx = db.transaction('pending', 'readwrite'); tx.objectStore('pending').put(rec); tx.oncomplete = function () { res(); }; tx.onerror = function () { rej(tx.error); }; }); }); }
+  function idbDelete(localId) { return idbOpen().then(function (db) { return new Promise(function (res, rej) { var tx = db.transaction('pending', 'readwrite'); tx.objectStore('pending').delete(localId); tx.oncomplete = function () { res(); }; tx.onerror = function () { rej(tx.error); }; }); }); }
+  function idbAll() { return idbOpen().then(function (db) { return new Promise(function (res, rej) { var tx = db.transaction('pending', 'readonly'); var rq = tx.objectStore('pending').getAll(); rq.onsuccess = function () { res(rq.result || []); }; rq.onerror = function () { rej(rq.error); }; }); }); }
 
   // ── 권한 아이콘 (원본 renderVals의 React 아이콘을 SVG 문자열로) ──
   var CAM_SVG = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="13" rx="3" stroke="#fff" stroke-width="2"/><circle cx="12" cy="12.5" r="3" stroke="#fff" stroke-width="2"/></svg>';
   var LOC_SVG = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6.5 7-11a7 7 0 10-14 0c0 4.5 7 11 7 11z" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.4" stroke="#fff" stroke-width="2"/></svg>';
   var CMP_SVG = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#fff" stroke-width="2"/><path d="M12 12l4-6-2 8-6 2 4-4z" fill="#fff"/></svg>';
 
-  // ── 로컬 저장(지점·그룹은 새로고침 후에도 유지) ──
+  // ── 로컬 저장 ──
+  // 지점·그룹은 이제 서버(공유)가 원본. localStorage는 오프라인/최초 페인트용 캐시로만 쓴다.
+  // 그룹 '숨김'(눈 아이콘)은 기기별 보기 설정이라 서버가 아닌 로컬에 남긴다.
   function load(key, def) { try { var v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch (e) { return def; } }
   function save(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {} }
+
+  // ── 서버 공유 저장소 API ──
+  // 지점/그룹을 서버에 저장해 모든 기기가 같은 목록을 본다. ID는 서버가 발급한다.
+  var API_BASE = '/api';
+  var API_KEY = '';   // docker-compose의 WRITE_KEY를 켤 때만 같은 값으로 채운다(기본: 공개, 미사용).
+  var api = {
+    _headers: function (json) {
+      var h = {};
+      if (json) h['Content-Type'] = 'application/json';
+      if (API_KEY) h['X-Arcam-Key'] = API_KEY;
+      return h;
+    },
+    // 전체 상태 조회. etag를 주면 변경 없을 때 304 → null 반환(저렴한 폴링).
+    getState: function (etag) {
+      var h = {};
+      if (etag != null) h['If-None-Match'] = '"' + etag + '"';
+      return fetch(API_BASE + '/state', { headers: h, cache: 'no-store' }).then(function (r) {
+        if (r.status === 304) return null;
+        if (!r.ok) throw new Error('state ' + r.status);
+        return r.json();
+      });
+    },
+    _send: function (method, path, body) {
+      return fetch(API_BASE + path, {
+        method: method,
+        headers: this._headers(body != null),
+        body: body != null ? JSON.stringify(body) : undefined,
+      }).then(function (r) { if (!r.ok) throw new Error(method + ' ' + path + ' ' + r.status); return r.json(); });
+    },
+    createPoint: function (p) { return this._send('POST', '/points', p); },
+    updatePoint: function (id, p) { return this._send('PUT', '/points/' + id, p); },
+    deletePoint: function (id) { return this._send('DELETE', '/points/' + id); },
+    clearPoints: function () { return this._send('POST', '/points/clear'); },
+    createGroup: function (grp) { return this._send('POST', '/groups', grp); },
+    updateGroup: function (id, grp) { return this._send('PUT', '/groups/' + id, grp); },
+    deleteGroup: function (id) { return this._send('DELETE', '/groups/' + id); },
+    importState: function (s) { return this._send('POST', '/import', s); },
+    // 사진 목록(폴링). rev를 주면 변경 없을 때 304 → null.
+    listPhotos: function (rev) {
+      var h = {};
+      if (rev != null) h['If-None-Match'] = '"p' + rev + '"';
+      return fetch(API_BASE + '/photos', { headers: h, cache: 'no-store' }).then(function (r) {
+        if (r.status === 304) return null;
+        if (!r.ok) throw new Error('photos ' + r.status);
+        return r.json();
+      });
+    },
+    // 업로드: 본문 = [썸네일][원본] 이어붙임, 경계는 X-Thumb-Len. 메타는 쿼리로.
+    // uid는 멱등키(같은 촬영 재업로드 시 서버가 중복 생성하지 않음).
+    uploadPhoto: function (thumbBlob, fullBlob, meta) {
+      var h = this._headers(false);
+      h['Content-Type'] = 'application/octet-stream';
+      h['X-Thumb-Len'] = String(thumbBlob.size);
+      var q = '?w=' + (meta.w || 0) + '&h=' + (meta.h || 0) + '&ts=' + meta.ts + '&uid=' + encodeURIComponent(meta.uid || '');
+      return fetch(API_BASE + '/photos' + q, { method: 'POST', headers: h, body: new Blob([thumbBlob, fullBlob]) })
+        .then(function (r) { if (!r.ok) { var e = new Error('upload ' + r.status); e.status = r.status; throw e; } return r.json(); });
+    },
+    deletePhoto: function (id) { return this._send('DELETE', '/photos/' + id); },
+  };
 
   // One Euro 필터(각도용). 저속에선 강하게 평활(지터↓), 고속에선 약하게(지연↓).
   function makeHeadingFilter() {
@@ -305,8 +395,9 @@
       }
     };
   }
-  var savedPoints = load(LS.points, []);
+  var savedPoints = load(LS.points, []);   // 최초 페인트용 캐시(곧 서버 값으로 교체됨)
   var savedGroups = load(LS.groups, []);
+  var hiddenGroups = load(LS.hidden, {}) || {};   // { groupId: true } — 기기별 숨김(서버와 무관)
   var maxPid = savedPoints.reduce(function (m, p) { return Math.max(m, p.id || 0); }, 0);
   var maxGid = savedGroups.reduce(function (m, g) { return Math.max(m, g.id || 0); }, 0);
 
@@ -314,9 +405,9 @@
   var app = {
     state: {
       tab: 'ar',
-      points: savedPoints,          // { id, name, lat, lon, groupId|null, color }
-      groups: savedGroups,          // { id, name, color, visible }
-      nextId: maxPid + 1,
+      points: savedPoints,          // { id, name, lat, lon, groupId|null, color } — 서버가 원본(id도 서버 발급)
+      groups: savedGroups,          // { id, name, color } — 서버 공유(숨김은 로컬 hiddenGroups)
+      nextId: maxPid + 1,           // (더 이상 id 발급에 쓰지 않음 — 서버가 발급)
       nextGid: maxGid + 1,
       photos: [],
       opacity: 0.6,
@@ -329,6 +420,8 @@
       toast: null,
       viewer: null,
       sheet: null,                  // 지점 추가/편집 시트 상태
+      selectMode: false,            // 사진 선택 모드(다운로드/삭제)
+      selected: {},                 // { photoId: true } — 선택된 서버 사진
     },
     _video: null, _mapEl: null, _map: null, _overlay: null, _markers: null, _locLayer: null,
     _stream: null, _watch: null, _orientBound: false, _mapTry: 0, _ovErr: 0, _tt: null,
@@ -338,6 +431,8 @@
     // 헤딩 센서 융합: 나침반(절대 기준) + Generic Sensor(자이로·지자기 OS 융합) + One Euro 필터
     _hf: null, _sensor: null, _sensorHeading: null, _compassHeading: null,
     _hasAbsolute: false, _sensorAgree: 0, _sensorTrusted: false,
+    // 사진: 서버 목록 + 미완료 업로드(로컬). state.photos는 이 둘을 합쳐 만든다.
+    _serverPhotos: [], _pending: {}, _photoRev: null, _photoPullSeq: 0, _idbWarned: false,
   };
 
   // ── setState: React setState의 얕은 병합 + 콜백 + componentDidUpdate ──
@@ -358,6 +453,278 @@
     if (prev.geo !== this.state.geo) this.drawLoc();
     if (prev.tab !== this.state.tab) { this.state.tab === 'ar' ? this.startAR() : this.stopAR(); }
     if (cb) cb();
+  };
+
+  // ── 서버 동기화 ──
+  app._rev = null;          // 마지막으로 받은 서버 리비전(ETag)
+  app._pullSeq = 0;         // pull 단일 비행(single-flight): 최신 요청의 응답만 반영
+  app._isOnline = null;
+
+  app._setOnline = function (ok) {
+    if (this._isOnline === ok) return;
+    this._isOnline = ok;
+    if (!ok) this.flash('서버 연결 안 됨 — 캐시된 지점을 표시 중');
+  };
+
+  // 서버에서 최신 지점/그룹을 받아 화면에 반영. force면 ETag 무시(항상 200).
+  app.pull = function (force) {
+    var self = this;
+    var seq = ++this._pullSeq;
+    return api.getState(force ? null : this._rev).then(function (data) {
+      self._setOnline(true);
+      if (!data) return false;            // 304: 변경 없음 → 재렌더 없이 종료
+      // 단일 비행: 더 최신 pull이 이미 발사됐으면 이 낡은 응답은 버린다. rev의 단조 증가에
+      // 기대지 않으므로, 서버가 초기화돼 rev가 되감겨도(예: 데이터 초기화) 최신 응답이 정상 반영된다.
+      if (seq !== self._pullSeq) return false;
+      self._rev = data.rev;
+      // 시트가 열려 입력 중이면, 재렌더로 입력창이 다시 그려지기 전에 지금까지 친 이름을 보존한다.
+      self._syncSheetName();
+      // setState가 identity 변화 감지 시 마커 갱신 + LS 캐시 저장을 처리한다.
+      self.setState({ points: data.points || [], groups: data.groups || [] });
+      return true;
+    });
+  };
+
+  // 모든 쓰기: API 호출 후 서버 상태로 강제 재동기화(서버가 진실). 성공하면 true를 반환한다.
+  // 쓰기(call) 자체 실패만 '저장 실패'로 다루고, 그 뒤 재동기화(GET) 실패는 일시 오프라인으로만
+  // 처리한다 — 성공한 쓰기를 실패로 오인해 사용자가 중복 실행하는 일을 막기 위함.
+  app.mutate = function (call, okMsg) {
+    var self = this;
+    return Promise.resolve().then(call).then(function () {
+      if (okMsg) self.flash(okMsg);
+      return self.pull(true).then(function () { return true; }, function () { self._setOnline(false); return true; });
+    }).catch(function () {
+      self._setOnline(false);
+      self.flash('서버 저장 실패 — 연결을 확인하세요');
+      self.pull(true).catch(function () {});   // 낙관적 흔적 없이 서버 실제값으로 복구
+      return false;
+    });
+  };
+
+  app.startSync = function () {
+    var self = this;
+    this.pull(true).then(function () { self._maybeMigrate(); }).catch(function () { self._setOnline(false); });
+    this.pullPhotos(true).catch(function () { self._setOnline(false); });
+    this._initPending();   // 새로고침 전에 못 올린 사진 복구 후 재시도
+    // 보이는 동안 15초마다, 그리고 탭 복귀·온라인 복귀 시 즉시 남의 변경을 가져온다.
+    setInterval(function () {
+      if (document.visibilityState === 'visible') {
+        self.pull(false).catch(function () { self._setOnline(false); });
+        self.pullPhotos(false).catch(function () {});
+        self.flush();
+      }
+    }, 15000);
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible') { self.pull(false).catch(function () {}); self.pullPhotos(false).catch(function () {}); self.flush(); }
+    });
+    window.addEventListener('online', function () { self.pull(false).catch(function () {}); self.pullPhotos(false).catch(function () {}); self.flush(); });
+  };
+
+  // 이 앱을 서버 도입 전부터 쓰던 기기의 로컬 지점을 1회만 서버로 이관(서버가 비어 있을 때만).
+  app._maybeMigrate = function () {
+    var self = this;
+    if (localStorage.getItem('arcam_migrated_v1')) return;
+    // 중요: 첫 pull(true)이 이미 LS 캐시를 서버값([])으로 덮었으므로, 로컬 원본은 반드시
+    // 모듈 로드 시 캡처해 둔 savedPoints/savedGroups 스냅샷에서 읽는다. (캐시를 다시 읽으면
+    // 빈 배열이 나와 이관이 건너뛰어지고 기존 지점이 영구 유실된다 — 리뷰에서 발견된 치명 버그.)
+    var lp = savedPoints || [], lg = savedGroups || [];
+    var mark = function () { try { localStorage.setItem('arcam_migrated_v1', '1'); } catch (e) {} };
+    if (this.state.points.length === 0 && this.state.groups.length === 0 && (lp.length || lg.length)) {
+      api.importState({ points: lp, groups: lg }).then(function (r) {
+        mark();
+        if (r && r.imported) {
+          self._rev = r.rev;
+          // 예전 그룹의 'visible:false'(기기별 숨김)를 새 서버 id 기준 hiddenGroups로 이관.
+          // import는 보낸 순서 그대로 그룹을 반환하고 그룹을 버리지 않으므로 인덱스가 대응된다.
+          (r.groups || []).forEach(function (g, i) { if (g && g.id != null && lg[i] && lg[i].visible === false) hiddenGroups[g.id] = true; });
+          save(LS.hidden, hiddenGroups);
+          self.setState({ points: r.points || [], groups: r.groups || [] });
+          self.flash('기존 지점을 서버로 옮겼어요');
+        }
+      }).catch(function () { self.flash('기존 지점 이관 실패 — 다음 접속 때 다시 시도합니다'); });
+    } else {
+      mark();
+    }
+  };
+
+  // ── 사진 저장/동기화 ──
+  // state.photos = 미완료(pending) 미리보기 + 서버 목록. 둘 중 하나라도 바뀌면 다시 합친다.
+  app._recompose = function () {
+    var pend = [];
+    for (var k in this._pending) {
+      var r = this._pending[k];
+      pend.push({ id: r.localId, pending: true, ts: r.ts, time: r.time, thumbUrl: r.thumbUrl, failed: r.failed });
+    }
+    pend.sort(function (a, b) { return b.ts - a.ts; });
+    this.setState({ photos: pend.concat(this._serverPhotos) });
+  };
+
+  // 서버 사진 목록 동기화. force면 ETag 무시. single-flight로 낡은 응답이 최신을 덮지 않게 한다.
+  app.pullPhotos = function (force) {
+    var self = this;
+    var seq = ++this._photoPullSeq;
+    return api.listPhotos(force ? null : this._photoRev).then(function (data) {
+      self._setOnline(true);
+      if (!data) return false;                 // 304
+      if (seq !== self._photoPullSeq) return false;   // 더 최신 pull이 이미 떴다 → 이 응답 폐기
+      self._photoRev = data.rev;
+      self._serverPhotos = (data.photos || []).map(mapServerPhoto);
+      self._recompose();
+      return true;
+    });
+  };
+
+  // 촬영 직후: 낙관적 미리보기 등록 + durable 큐 저장 + 업로드 시도.
+  // localId(=uid)는 전역 유일 → 서버 멱등키로도 쓴다(재부팅 재업로드 시 중복 방지).
+  app.addPending = function (thumbBlob, fullBlob, meta) {
+    var self = this, localId = meta.uid;
+    var thumbUrl = URL.createObjectURL(thumbBlob);
+    this._pending[localId] = {
+      localId: localId, ts: meta.ts, time: fmtTime(meta.ts), thumbUrl: thumbUrl,
+      thumbBlob: thumbBlob, fullBlob: fullBlob, w: meta.w, h: meta.h, inflight: false, failed: false,
+    };
+    idbPut({ localId: localId, ts: meta.ts, thumbBlob: thumbBlob, fullBlob: fullBlob, w: meta.w, h: meta.h }).catch(function () {
+      if (!self._idbWarned) { self._idbWarned = true; self.flash('이 브라우저는 오프라인 사진 임시저장이 제한됩니다'); }
+    });
+    this._recompose();
+    this.flush();
+  };
+
+  // 미완료 업로드를 모두 시도(single-flight per item). 성공하면 큐·미리보기에서 제거.
+  app.flush = function () {
+    var self = this;
+    Object.keys(this._pending).forEach(function (localId) {
+      var r = self._pending[localId];
+      if (!r || r.inflight) return;
+      r.inflight = true; r.failed = false;
+      // uid=localId를 함께 보내 서버가 재업로드를 멱등 처리하게 한다.
+      api.uploadPhoto(r.thumbBlob, r.fullBlob, { w: r.w, h: r.h, ts: r.ts, uid: localId }).then(function (res) {
+        idbDelete(localId).catch(function () {});
+        try { URL.revokeObjectURL(r.thumbUrl); } catch (e) {}
+        delete self._pending[localId];
+        // 폴링을 기다리지 않고 방금 올린 사진을 즉시 목록에 반영(깜빡임 방지).
+        if (res && res.photo) {
+          var mapped = mapServerPhoto(res.photo);
+          self._serverPhotos = [mapped].concat(self._serverPhotos.filter(function (x) { return x.id !== mapped.id; }));
+        }
+        self._recompose();
+        self._setOnline(true);
+        self.pullPhotos(true).catch(function () {});   // 남이 올린 것도 함께 반영(서버가 진실)
+      }).catch(function (err) {
+        var st = err && err.status;
+        if (st && st >= 400 && st < 500 && st !== 429) {
+          // 서버가 영구 거부(포맷·한도 등) — 재시도해도 소용없으니 큐에서 제거한다(무한 재시도/스턱 방지).
+          idbDelete(localId).catch(function () {});
+          try { URL.revokeObjectURL(r.thumbUrl); } catch (e) {}
+          delete self._pending[localId];
+          self._recompose();
+          self.flash('사진 업로드가 거부되었습니다 (' + st + ')');
+        } else {
+          r.inflight = false; r.failed = true;   // 일시 오류 → 다음 기회에 재시도
+          self._setOnline(false);
+          self._recompose();
+        }
+      });
+    });
+  };
+
+  // 부팅 시 IndexedDB의 미완료 업로드를 복구해 재시도.
+  app._initPending = function () {
+    var self = this;
+    idbAll().then(function (recs) {
+      recs.forEach(function (rec) {
+        if (self._pending[rec.localId]) return;
+        var thumbUrl = URL.createObjectURL(rec.thumbBlob);
+        self._pending[rec.localId] = {
+          localId: rec.localId, ts: rec.ts, time: fmtTime(rec.ts), thumbUrl: thumbUrl,
+          thumbBlob: rec.thumbBlob, fullBlob: rec.fullBlob, w: rec.w, h: rec.h, inflight: false, failed: true,
+        };
+      });
+      if (recs.length) { self._recompose(); self.flush(); }
+    }).catch(function () {});
+  };
+
+  // 미완료(실패) 사진을 사용자가 직접 폐기.
+  app.discardPending = function (localId) {
+    var r = this._pending[localId]; if (!r) return;
+    idbDelete(localId).catch(function () {});
+    try { URL.revokeObjectURL(r.thumbUrl); } catch (e) {}
+    delete this._pending[localId];
+    this._recompose();
+    this.flash('삭제됨');
+  };
+
+  // 뷰어에서 단일 삭제(서버 반영).
+  app.deletePhoto = function (id) {
+    var self = this;
+    this.setState({ viewer: null });
+    api.deletePhoto(id).then(function () {
+      self._serverPhotos = self._serverPhotos.filter(function (p) { return p.id !== id; });
+      self._recompose();
+      self.pullPhotos(true).catch(function () {});
+      self.flash('사진 삭제됨');
+    }).catch(function () { self.flash('삭제 실패'); });
+  };
+
+  // ── 사진 선택/다운로드 ──
+  // 선택 id는 반드시 '현재 서버에 존재하는' 것으로 교집합 → 남이 지운 사진의 낡은 선택을 걸러낸다.
+  app._selectedIds = function () {
+    var sel = this.state.selected || {};
+    var live = {}; this._serverPhotos.forEach(function (p) { live[p.id] = 1; });
+    return Object.keys(sel).filter(function (k) { return sel[k] && /^\d+$/.test(k) && live[k]; }).map(Number);
+  };
+  app.toggleSelectMode = function () { this.setState(function (s) { return { selectMode: !s.selectMode, selected: {} }; }); };
+  app.toggleSelect = function (id) {
+    this.setState(function (s) {
+      var sel = {}; for (var k in s.selected) sel[k] = s.selected[k];
+      if (sel[id]) delete sel[id]; else sel[id] = true;
+      return { selected: sel };
+    });
+  };
+  app.selectAllPhotos = function () {
+    var sel = {};
+    this._serverPhotos.forEach(function (p) { sel[p.id] = true; });
+    this.setState({ selected: sel });
+  };
+  app.downloadSelected = function () {
+    var ids = this._selectedIds();
+    if (!ids.length) return this.flash('선택된 사진이 없습니다');
+    if (ids.length === 1) {
+      // 단일: 원본 JPEG을 바로 다운로드(서버가 Content-Disposition attachment 부여).
+      var a = document.createElement('a');
+      a.href = API_BASE + '/photos/' + ids[0] + '?dl=1';
+      a.download = 'arcam-' + ids[0] + '.jpg';
+      document.body.appendChild(a); a.click(); a.remove();
+      return;
+    }
+    // 다중: 서버가 zip으로 묶어 준다.
+    var self = this;
+    this.flash('사진 ' + ids.length + '장 압축 중…');
+    fetch(API_BASE + '/photos/zip', { method: 'POST', headers: api._headers(true), body: JSON.stringify({ ids: ids }) })
+      .then(function (r) { if (r.status === 413) throw new Error('too-big'); if (!r.ok) throw new Error('zip ' + r.status); return r.blob(); })
+      .then(function (blob) {
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a'); a.href = url; a.download = 'arcam-photos-' + ids.length + '.zip';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { try { URL.revokeObjectURL(url); } catch (e) {} }, 15000);
+        self.flash('다운로드를 시작합니다');
+      })
+      .catch(function (err) {
+        self.flash(err && err.message === 'too-big' ? '한 번에 받기엔 너무 많아요 — 나눠서 선택해 주세요' : '다운로드 실패 — 연결을 확인하세요');
+      });
+  };
+  app.deleteSelected = function () {
+    var ids = this._selectedIds();
+    if (!ids.length) return this.flash('선택된 사진이 없습니다');
+    if (!window.confirm(ids.length + '장의 사진을 삭제할까요?')) return;
+    var self = this;
+    // 성공/실패를 집계 → 전부 실패인데 성공했다고 오인하지 않게 한다.
+    Promise.all(ids.map(function (id) { return api.deletePhoto(id).then(function () { return true; }, function () { return false; }); })).then(function (oks) {
+      var done = oks.filter(Boolean).length, failed = oks.length - done;
+      self.pullPhotos(true).catch(function () {});
+      if (failed) { self.flash(failed + '장 삭제 실패 — 연결을 확인하세요'); }   // 선택 모드 유지 → 재시도 가능
+      else { self.setState({ selectMode: false, selected: {} }); self.flash(done + '장 삭제됨'); }
+    });
   };
 
   // ── 좌표 수학 ──
@@ -413,7 +780,7 @@
   // ── 그룹 / 색 유틸 ──
   app.groupById = function (id) { var gs = this.state.groups; for (var i = 0; i < gs.length; i++) if (gs[i].id === id) return gs[i]; return null; };
   app.effColor = function (p) { var g = p.groupId != null ? this.groupById(p.groupId) : null; return g ? g.color : (p.color || ACCENT); };
-  app.groupVisible = function (p) { var g = p.groupId != null ? this.groupById(p.groupId) : null; return g ? g.visible !== false : true; };
+  app.groupVisible = function (p) { return p.groupId == null ? true : !hiddenGroups[p.groupId]; };   // 숨김은 기기별 로컬 설정
   app.visiblePoints = function () { var self = this; return this.state.points.filter(function (p) { return self.groupVisible(p); }); };
 
   // ── 센서 ──
@@ -490,7 +857,9 @@
     if (!navigator.mediaDevices) { this.setState(function (s) { return { perms: Object.assign({}, s.perms, { camera: 'unavailable' }) }; }); return; }
     this.setState(function (s) { return { perms: Object.assign({}, s.perms, { camera: 'pending' }) }; });
     var self = this;
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false })
+    // 해상도를 지정하지 않으면 브라우저가 기본 저해상도(대개 640×480)를 줘서 프리뷰·사진 모두 흐릿해진다.
+    // 프리뷰와 촬영이 같은 스트림을 공유하므로 QHD를 ideal로 요청(미지원 시 근접 해상도로 폴백 — 실패 안 함).
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 2560 }, height: { ideal: 1440 } }, audio: false })
       .then(function (str) {
         self._stream = str;
         if (self._video) { self._video.srcObject = str; self._video.play().catch(function () {}); }
@@ -582,10 +951,21 @@
   app.sheetAddGroup = function () {
     var nm = window.prompt('새 그룹 이름'); if (!nm || !nm.trim()) return;
     this._syncSheetName();
-    this.setState(function (s) {
-      var g = { id: s.nextGid, name: nm.trim(), color: PAL[s.groups.length % PAL.length], visible: true };
-      return { groups: s.groups.concat([g]), nextGid: s.nextGid + 1, sheet: Object.assign({}, s.sheet, { groupId: g.id }) };
-    });
+    var self = this, name = nm.trim(), color = PAL[this.state.groups.length % PAL.length];
+    api.createGroup({ name: name, color: color }).then(function (r) {
+      self._rev = r.rev;
+      // 서버가 돌려준 그룹(권위 있는 id)을 즉시 반영하고 현재 시트에 선택으로 표시한다.
+      // (시트 이름은 위 _syncSheetName으로 이미 보존됨. 이후 폴링이 서버 목록으로 재동기화.)
+      self.setState(function (s) {
+        // 동시 폴링이 이미 이 그룹을 목록에 반영했을 수 있으므로 id 기준 멱등 처리(중복 칩 방지).
+        var has = s.groups.some(function (x) { return x.id === r.group.id; });
+        return {
+          groups: has ? s.groups : s.groups.concat([r.group]),
+          sheet: s.sheet ? Object.assign({}, s.sheet, { groupId: r.group.id }) : s.sheet,
+        };
+      });
+      self.pull(false).catch(function () { self._setOnline(false); });   // 배경 재동기화(실패해도 낙관적 추가 유지)
+    }).catch(function () { self.flash('그룹 추가 실패 — 연결을 확인하세요'); });
   };
   app.commitSheet = function () {
     this._syncSheetName();
@@ -593,51 +973,55 @@
     var name = (sh.name || '').trim();
     var self = this;
     this._lastGroupId = sh.groupId;   // 다음 신규 지점의 기본 그룹으로 기억
+    // 이름은 서버가 채운다: 신규는 빈 이름이면 '지점 N', 편집은 빈 이름이면 기존 이름 유지.
+    // 성공했을 때만 시트를 닫아, 실패(오프라인 등) 시 입력(이름·그룹·색, 신규는 지도에서 찍은 좌표)을 보존한다.
+    var done = function (ok) { if (ok) self.setState({ sheet: null }); };
     if (sh.mode === 'edit') {
-      this.setState(function (s) {
-        return { points: s.points.map(function (x) { return x.id === sh.id ? Object.assign({}, x, { name: name || x.name, groupId: sh.groupId, color: sh.color }) : x; }), sheet: null };
-      }, function () { self.flash('지점 수정됨'); });
+      var eid = sh.id, eg = sh.groupId, ec = sh.color;
+      this.mutate(function () { return api.updatePoint(eid, { name: name, groupId: eg, color: ec }); }, '지점 수정됨').then(done);
     } else {
-      this.setState(function (s) {
-        var nm = name || ('지점 ' + s.nextId);
-        return { points: s.points.concat([{ id: s.nextId, name: nm, lat: sh.lat, lon: sh.lon, groupId: sh.groupId, color: sh.color }]), nextId: s.nextId + 1, sheet: null };
-      }, function () { self.flash('지점 추가됨'); });
+      var body = { name: name, lat: sh.lat, lon: sh.lon, groupId: sh.groupId, color: sh.color };
+      this.mutate(function () { return api.createPoint(body); }, '지점 추가됨').then(done);
     }
   };
   app.deleteFromSheet = function () {
     var sh = this.state.sheet; if (!sh || sh.id == null) return;
-    var self = this;
-    this.setState(function (s) { return { points: s.points.filter(function (x) { return x.id !== sh.id; }), sheet: null }; }, function () { self.flash('지점 삭제됨'); });
+    var id = sh.id, self = this;
+    this.mutate(function () { return api.deletePoint(id); }, '지점 삭제됨').then(function (ok) { if (ok) self.setState({ sheet: null }); });
   };
   app.deletePointConfirm = function (id) {
     var p = this.state.points.find(function (x) { return x.id === id; }); if (!p) return;
-    if (window.confirm('“' + p.name + '” 지점을 삭제할까요?')) this.setState(function (s) { return { points: s.points.filter(function (x) { return x.id !== id; }) }; });
+    if (window.confirm('“' + p.name + '” 지점을 삭제할까요?')) this.mutate(function () { return api.deletePoint(id); });
   };
   // ── 그룹 관리(목록 화면) ──
   app.addGroup = function () {
     var nm = window.prompt('새 그룹 이름'); if (!nm || !nm.trim()) return;
-    this.setState(function (s) { return { groups: s.groups.concat([{ id: s.nextGid, name: nm.trim(), color: PAL[s.groups.length % PAL.length], visible: true }]), nextGid: s.nextGid + 1 }; });
+    var name = nm.trim(), color = PAL[this.state.groups.length % PAL.length];
+    this.mutate(function () { return api.createGroup({ name: name, color: color }); });
   };
   app.renameGroup = function (id) {
     var g = this.groupById(id); if (!g) return;
     var nm = window.prompt('그룹 이름', g.name); if (!nm || !nm.trim()) return;
-    this.setState(function (s) { return { groups: s.groups.map(function (x) { return x.id === id ? Object.assign({}, x, { name: nm.trim() }) : x; }) }; });
+    var name = nm.trim();
+    this.mutate(function () { return api.updateGroup(id, { name: name }); });
   };
   app.cycleGroupColor = function (id) {
     var g = this.groupById(id); if (!g) return;
-    var i = (PAL.indexOf(g.color) + 1 + PAL.length) % PAL.length;
-    this.setState(function (s) { return { groups: s.groups.map(function (x) { return x.id === id ? Object.assign({}, x, { color: PAL[i] }) : x; }) }; });
+    var color = PAL[(PAL.indexOf(g.color) + 1 + PAL.length) % PAL.length];
+    this.mutate(function () { return api.updateGroup(id, { color: color }); });
   };
+  // 그룹 숨김은 '내 화면에서만' 감추는 기기별 설정 → 서버에 저장하지 않는다.
   app.toggleGroup = function (id) {
-    this.setState(function (s) { return { groups: s.groups.map(function (x) { return x.id === id ? Object.assign({}, x, { visible: x.visible === false }) : x; }) }; });
+    if (hiddenGroups[id]) delete hiddenGroups[id]; else hiddenGroups[id] = true;
+    save(LS.hidden, hiddenGroups);
+    this.render();          // 목록 눈 아이콘 갱신
+    this.refreshMarkers();  // 지도 마커 흐리기 반영(AR은 매 프레임 자동 반영)
   };
   app.deleteGroup = function (id) {
     var g = this.groupById(id); if (!g) return;
     if (!window.confirm('“' + g.name + '” 그룹을 삭제할까요?\n(그룹의 지점은 삭제되지 않고 “그룹 없음”으로 이동합니다)')) return;
-    this.setState(function (s) {
-      return { groups: s.groups.filter(function (x) { return x.id !== id; }),
-        points: s.points.map(function (p) { return p.groupId === id ? Object.assign({}, p, { groupId: null }) : p; }) };
-    });
+    if (hiddenGroups[id]) { delete hiddenGroups[id]; save(LS.hidden, hiddenGroups); }
+    this.mutate(function () { return api.deleteGroup(id); });   // 서버가 지점을 '그룹 없음'으로 이동
   };
   app.recenter = function () {
     if (!this._map) return;
@@ -659,7 +1043,7 @@
       return { overlayOn: on };
     });
   };
-  app.clearDraw = function () { if (window.confirm('모든 지점을 삭제할까요?')) this.setState({ points: [] }); };
+  app.clearDraw = function () { var self = this; if (window.confirm('모든 지점을 삭제할까요?')) this.mutate(function () { return api.clearPoints(); }); };
 
   // ── AR 핀 계산 (실측 위치 + 보간된 헤딩 기준) ──
   app.computePins = function () {
@@ -839,13 +1223,20 @@
     if (msg) { this.setState({ toast: msg }); clearTimeout(this._tt); this._tt = setTimeout(function () { self.setState({ toast: null }); }, 1700); }
   };
   app.capturePhoto = function () {
-    var W = 720, H = 1280, c = document.createElement('canvas'); c.width = W; c.height = H;
-    var ctx = c.getContext('2d');
-    var v = this._video;
-    if (this.state.cameraOn && v && v.videoWidth) {
-      var vr = v.videoWidth / v.videoHeight, cr = W / H, sw, sh, sx, sy;
+    var W = 720, H = 1280;                       // 오버레이 디자인 좌표계 (아래 핀·글씨 상수는 이 기준 그대로)
+    var v = this._video, hasVideo = this.state.cameraOn && v && v.videoWidth;
+    var sw, sh, sx, sy;
+    if (hasVideo) {
+      var vr = v.videoWidth / v.videoHeight, cr = W / H;
       if (vr > cr) { sh = v.videoHeight; sw = sh * cr; sx = (v.videoWidth - sw) / 2; sy = 0; }
       else { sw = v.videoWidth; sh = sw / cr; sx = 0; sy = (v.videoHeight - sh) / 2; }
+    }
+    // 출력 캔버스를 실제 크롭된 원본 세로해상도(최대 2160px, 720×1280 미만으로는 안 줄임)까지 키워
+    // 카메라 디테일을 그대로 담는다. 좌표계는 720×1280로 두고 ctx.scale로 확대 → 오버레이 코드 무수정.
+    var k = Math.min(Math.max(sh || H, H), 2160) / H;
+    var c = document.createElement('canvas'); c.width = Math.round(W * k); c.height = Math.round(H * k);
+    var ctx = c.getContext('2d'); ctx.scale(k, k); ctx.imageSmoothingQuality = 'high';
+    if (hasVideo) {
       ctx.drawImage(v, sx, sy, sw, sh, 0, 0, W, H);
     } else {
       ctx.fillStyle = '#0a0b0d'; ctx.fillRect(0, 0, W, H);
@@ -873,14 +1264,26 @@
     ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.font = '600 22px Pretendard, sans-serif'; ctx.textAlign = 'right';
     ctx.fillText(new Date().toLocaleString('ko-KR'), W - 20, H - 24);
     ctx.textAlign = 'left';
-    var url = c.toDataURL('image/jpeg', 0.85);
-    this.setState(function (s) {
-      return { photos: [{ id: Date.now(), url: url, time: new Date().toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) }].concat(s.photos) };
-    });
+    // 원본(9:16)과 1:1 썸네일(중앙 크롭)을 만들어 서버에 올린다. 셔터 반응은 즉시,
+    // 업로드는 낙관적 미리보기 뒤에서(오프라인이면 큐에 쌓여 재시도). uid는 촬영마다 전역 유일.
+    var self = this, ts = Date.now();
+    var uid = 'p-' + ts.toString(36) + '-' + Math.random().toString(36).slice(2, 9);
+    var meta = { w: c.width, h: c.height, ts: ts, uid: uid };
+    var TS = 480, side = Math.min(c.width, c.height);   // 세로 사진 → 가로폭이 한 변
+    var tc = document.createElement('canvas'); tc.width = TS; tc.height = TS;
+    var tctx = tc.getContext('2d'); tctx.imageSmoothingQuality = 'high';
+    tctx.drawImage(c, (c.width - side) / 2, (c.height - side) / 2, side, side, 0, 0, TS, TS);
     // 셔터 플래시 애니메이션 재시작 (매 촬영마다)
     var fl = $('flash');
     if (fl) { fl.style.animation = 'none'; void fl.offsetWidth; fl.style.animation = 'flash .35s ease forwards'; }
-    this.flash('AR 포함하여 저장됨');
+    this.flash('사진 저장 중…');
+    c.toBlob(function (fullBlob) {
+      if (!fullBlob) { self.flash('사진 저장 실패'); return; }
+      tc.toBlob(function (thumbBlob) {
+        if (!thumbBlob) { self.flash('사진 저장 실패'); return; }
+        self.addPending(thumbBlob, fullBlob, meta);
+      }, 'image/jpeg', 0.82);
+    }, 'image/jpeg', 0.92);
   };
 
   app.setTab = function (t) { this.setState({ tab: t }); };
@@ -918,10 +1321,11 @@
     setStyle('compass-band', 'display', SHOW_COMPASS ? 'block' : 'none');
     setStyle('heading-readout', 'color', acc);
 
-    // 셔터 썸네일
-    setHTML('gallery-thumb', S.photos[0]
-      ? '<img src="' + S.photos[0].url + '" style="width:100%;height:100%;object-fit:cover">'
-      : '<span>' + S.photos.length + '</span>');
+    // 셔터 썸네일(카메라 화면 우하단): 최신 사진의 썸네일.
+    var first = S.photos[0];
+    setHTML('gallery-thumb', first
+      ? '<img src="' + (first.pending ? first.thumbUrl : (API_BASE + '/photos/' + first.id + '/thumb')) + '" style="width:100%;height:100%;object-fit:cover">'
+      : '<span>0</span>');
 
     // 지도
     setStyle('ov-toggle', 'background', S.overlayOn ? acc : 'rgba(255,255,255,.2)');
@@ -935,11 +1339,40 @@
     // 지점 목록(그룹별)
     this.renderList(g);
 
-    // 갤러리
+    // 갤러리 툴바(선택/다운로드/삭제)
+    var selMode = S.selectMode, selCount = this._selectedIds().length, serverCount = this._serverPhotos.length;
+    var tb;
+    if (!selMode) {
+      tb = '<div style="display:flex;justify-content:flex-end">' +
+        (serverCount ? '<div data-tb="select" style="cursor:pointer;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:7px 13px;font-size:12px;font-weight:800">선택</div>' : '') +
+        '</div>';
+    } else {
+      tb = '<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">' +
+        '<div style="font-size:12px;font-weight:800;color:' + acc + '">' + selCount + '장 선택</div>' +
+        '<div style="flex:1"></div>' +
+        '<div data-tb="all" style="cursor:pointer;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:7px 11px;font-size:12px;font-weight:700">전체 선택</div>' +
+        '<div data-tb="download" style="cursor:pointer;background:' + acc + ';border-radius:10px;padding:7px 13px;font-size:12px;font-weight:800">다운로드</div>' +
+        '<div data-tb="delete" style="cursor:pointer;background:rgba(200,60,80,.22);border:1px solid rgba(220,80,100,.4);color:#ff9aab;border-radius:10px;padding:7px 11px;font-size:12px;font-weight:700">삭제</div>' +
+        '<div data-tb="cancel" style="cursor:pointer;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:7px 11px;font-size:12px;font-weight:700">취소</div>' +
+        '</div>';
+    }
+    setHTML('photos-toolbar', tb);
+
+    // 갤러리 그리드: 1:1 썸네일(중앙 크롭)
     setHTML('photos-grid', S.photos.map(function (ph) {
-      return '<div data-act="open" data-id="' + ph.id + '" style="cursor:pointer;position:relative;aspect-ratio:9/16;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.1)">' +
-        '<img src="' + ph.url + '" style="width:100%;height:100%;object-fit:cover">' +
-        '<div style="position:absolute;left:0;right:0;bottom:0;padding:6px 8px;background:linear-gradient(transparent,rgba(0,0,0,.7));font-size:10px;font-weight:600">' + esc(ph.time) + '</div></div>';
+      var isSel = !!(S.selected && S.selected[ph.id]);
+      var src = ph.pending ? ph.thumbUrl : (API_BASE + '/photos/' + ph.id + '/thumb');
+      var overlay = '';
+      if (ph.pending) {
+        overlay = '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35)">' +
+          '<div style="font-size:11px;font-weight:800;background:rgba(0,0,0,.55);padding:3px 9px;border-radius:999px">' + (ph.failed ? '업로드 대기' : '업로드 중…') + '</div></div>';
+      } else if (selMode) {
+        overlay = '<div style="position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;border:2px solid #fff;background:' + (isSel ? acc : 'rgba(0,0,0,.35)') + ';display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff">' + (isSel ? '✓' : '') + '</div>';
+      }
+      return '<div data-act="tap" data-id="' + ph.id + '" style="cursor:pointer;position:relative;aspect-ratio:1/1;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.1);' + (isSel ? 'outline:2px solid ' + acc + ';outline-offset:-2px' : '') + '">' +
+        '<img src="' + src + '" loading="lazy" style="width:100%;height:100%;object-fit:cover">' +
+        overlay +
+        '<div style="position:absolute;left:0;right:0;bottom:0;padding:5px 7px;background:linear-gradient(transparent,rgba(0,0,0,.7));font-size:10px;font-weight:600">' + esc(ph.time || '') + '</div></div>';
     }).join(''));
     setStyle('photos-empty', 'display', S.photos.length ? 'none' : 'block');
 
@@ -978,10 +1411,11 @@
     setStyle('toast', 'display', S.toast ? 'block' : 'none');
     setText('toast', S.toast || '');
 
-    // 사진 뷰어
-    var viewer = S.photos.find(function (p) { return p.id === S.viewer; });
+    // 사진 뷰어(서버 원본)
+    var viewer = S.photos.find(function (p) { return !p.pending && p.id === S.viewer; });
     setStyle('viewer', 'display', viewer ? 'flex' : 'none');
-    var vi = $('viewer-img'); if (vi) vi.src = viewer ? viewer.url : '';
+    var vi = $('viewer-img');
+    if (vi) { var vs = viewer ? (API_BASE + '/photos/' + viewer.id) : ''; if (vi.src.slice(-vs.length) !== vs || !vs) vi.src = vs; }
 
     // 지점 추가/편집 시트
     this.renderSheet();
@@ -998,7 +1432,7 @@
       var grp = sec.grp, pts = sec.pts;
       if (!grp && pts.length === 0) return;   // 빈 '그룹 없음'은 숨김
       var gcol = grp ? grp.color : 'rgba(255,255,255,.4)';
-      var hidden = grp ? grp.visible === false : false;
+      var hidden = grp ? !!hiddenGroups[grp.id] : false;
       html += '<div style="display:flex;align-items:center;gap:9px;margin:16px 2px 8px">' +
         '<div style="width:11px;height:11px;border-radius:3px;background:' + gcol + '"></div>' +
         '<div style="font-size:13px;font-weight:800;color:#f4f4f5">' + esc(grp ? grp.name : '그룹 없음') + '</div>' +
@@ -1044,15 +1478,18 @@
     this._sheetSig = sig;
     wrap.style.display = 'block';
     var S = this.state;
+    // 선택된 그룹이 (다른 기기에서) 삭제돼 더는 존재하지 않으면 '그룹 없음'으로 취급한다.
+    // 안 그러면 어떤 칩도 강조되지 않고 색상 선택기도 사라진다(그룹 선택 시엔 색이 그룹색이므로).
+    var gid = (sh.groupId != null && this.groupById(sh.groupId)) ? sh.groupId : null;
     function chipG(gid, name, col, on) {
       return '<div data-act="group" data-gid="' + (gid == null ? '' : gid) + '" style="cursor:pointer;display:flex;align-items:center;gap:6px;border:1.5px solid ' + (on ? col : 'rgba(255,255,255,.14)') + ';background:' + (on ? 'rgba(255,255,255,.06)' : 'transparent') + ';border-radius:999px;padding:7px 12px;font-size:12.5px;font-weight:700;color:#f4f4f5">' +
         '<span style="width:10px;height:10px;border-radius:50%;background:' + col + '"></span>' + esc(name) + '</div>';
     }
-    var groupsChips = chipG(null, '그룹 없음', 'rgba(255,255,255,.5)', sh.groupId == null);
-    S.groups.forEach(function (grp) { groupsChips += chipG(grp.id, grp.name, grp.color, sh.groupId === grp.id); });
+    var groupsChips = chipG(null, '그룹 없음', 'rgba(255,255,255,.5)', gid == null);
+    S.groups.forEach(function (grp) { groupsChips += chipG(grp.id, grp.name, grp.color, gid === grp.id); });
     groupsChips += '<div data-act="addgroup" style="cursor:pointer;border:1px dashed rgba(255,255,255,.3);color:rgba(255,255,255,.7);border-radius:999px;padding:7px 12px;font-size:12.5px;font-weight:700">+ 새 그룹</div>';
     var colorRow = '';
-    if (sh.groupId == null) {
+    if (gid == null) {
       colorRow = '<div style="font-size:12px;color:rgba(255,255,255,.5);margin:14px 2px 8px;font-weight:700">색상</div><div style="display:flex;gap:9px;flex-wrap:wrap">' +
         PAL.map(function (c) {
           var on = c === sh.color;
@@ -1102,7 +1539,7 @@
 
     // 뷰어
     $('viewer-close').addEventListener('click', function () { app.setState({ viewer: null }); });
-    $('viewer-delete').addEventListener('click', function () { app.setState(function (s) { return { photos: s.photos.filter(function (p) { return p.id !== s.viewer; }), viewer: null }; }); });
+    $('viewer-delete').addEventListener('click', function () { if (app.state.viewer != null) app.deletePhoto(app.state.viewer); });
 
     // 목록 (위임) — 지점 편집/삭제 + 그룹 관리
     $('points-list').addEventListener('click', function (e) {
@@ -1130,11 +1567,30 @@
       else if (act === 'delete') app.deleteFromSheet();
     });
     $('point-sheet-backdrop').addEventListener('click', function () { app.closeSheet(); });
-    // 갤러리 (위임)
+    // 갤러리 그리드 (위임): 선택 모드면 토글, 아니면 뷰어 열기.
+    // 미완료(pending) 타일은 숫자가 아닌 uid → 실패한 것은 폐기 확인, 진행 중은 안내만.
     $('photos-grid').addEventListener('click', function (e) {
-      var t = e.target.closest('[data-act="open"]'); if (!t) return;
-      var id = parseInt(t.getAttribute('data-id'), 10);
-      app.setState({ viewer: id });
+      var t = e.target.closest('[data-act="tap"]'); if (!t) return;
+      var id = t.getAttribute('data-id');
+      if (!/^\d+$/.test(id)) {
+        var pr = app._pending[id];
+        if (pr && pr.failed) { if (window.confirm('이 사진 업로드를 취소하고 삭제할까요?')) app.discardPending(id); }
+        else app.flash('업로드 중…');
+        return;
+      }
+      var nid = parseInt(id, 10);
+      if (app.state.selectMode) app.toggleSelect(nid);
+      else app.setState({ viewer: nid });
+    });
+    // 갤러리 툴바 (위임)
+    $('photos-toolbar').addEventListener('click', function (e) {
+      var t = e.target.closest('[data-tb]'); if (!t) return;
+      var a = t.getAttribute('data-tb');
+      if (a === 'select') app.toggleSelectMode();
+      else if (a === 'cancel') app.setState({ selectMode: false, selected: {} });
+      else if (a === 'all') app.selectAllPhotos();
+      else if (a === 'download') app.downloadSelected();
+      else if (a === 'delete') app.deleteSelected();
     });
     // 권한 카드 (위임)
     $('perm-cards').addEventListener('click', function (e) {
@@ -1153,6 +1609,7 @@
     app.initMapWhenReady();
     app.attachOrientation(true);
     app.startAR();   // AR 렌더 루프 시작(현재 탭이 카메라)
+    app.startSync();  // 서버에서 공유 지점/그룹 동기화 시작(+주기 폴링)
     if (navigator.permissions && navigator.permissions.query) {
       // 이전에 허용한 권한은 자동으로 다시 켜서, 열자마자 실제 화면·위치가 나오게 한다.
       navigator.permissions.query({ name: 'geolocation' }).then(function (p) {

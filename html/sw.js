@@ -14,7 +14,7 @@
  */
 'use strict';
 
-var CACHE = 'arcam-v3-2026-07-19';
+var CACHE = 'arcam-v5-2026-07-19';
 
 // 오프라인 시작에 반드시 필요한 같은 출처 리소스 (하나라도 실패하면 install 실패).
 var CORE = [
@@ -69,6 +69,12 @@ function isMapTile(url) {
   return /(^|\.)tile\.openstreetmap\.org|vworld\.kr|2dcache/i.test(url.host + url.pathname + url.search);
 }
 
+function isApi(url) {
+  // 공유 지점/그룹 API(/api/*)는 절대 캐시하지 않는다. 캐시하면 서버 공유 상태가 낡아
+  // 남의 변경이 안 보이고 내가 방금 저장한 것도 잠시 사라진 것처럼 보인다(ETag/폴링 무력화).
+  return url.origin === self.location.origin && url.pathname.indexOf('/api/') === 0;
+}
+
 function isCacheableAsset(url) {
   if (url.origin === self.location.origin) return true;
   return /unpkg\.com|cdn\.jsdelivr\.net/i.test(url.host);
@@ -82,6 +88,7 @@ self.addEventListener('fetch', function (e) {
   try { url = new URL(req.url); } catch (err) { return; }
   if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
   if (isMapTile(url)) return; // 네트워크에 맡김
+  if (isApi(url)) return;     // 공유 API는 항상 네트워크(서버가 진실)
 
   // 페이지 이동: network-first, 오프라인이면 캐시된 셸.
   if (req.mode === 'navigate') {

@@ -3,3 +3,6 @@
 
 # deployment-only local overrides, if any are added later
 docker-compose.override.yml
+
+# 지점 공유 API의 런타임 데이터(서버에만 존재, 커밋하지 않음)
+data/
