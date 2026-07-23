@@ -14,13 +14,14 @@
  */
 'use strict';
 
-var CACHE = 'arcam-v11-2026-07-23';
+var CACHE = 'arcam-v12-2026-07-23';
 
 // 오프라인 시작에 반드시 필요한 같은 출처 리소스 (하나라도 실패하면 install 실패).
+// ※ manifest는 여기 넣지 않는다 — 설치/업데이트 시 크롬이 SW 캐시의 낡은 매니페스트를
+//   집어가면 WebAPK가 옛 display 모드로 구워진다. 아래 fetch에서도 가로채지 않는다.
 var CORE = [
   './',
   './index.html',
-  './manifest.webmanifest',
   './icons/icon-192.png?v=2',
   './icons/icon-512.png?v=2',
   './icons/apple-touch-icon.png?v=2'
@@ -89,6 +90,8 @@ self.addEventListener('fetch', function (e) {
   if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
   if (isMapTile(url)) return; // 네트워크에 맡김
   if (isApi(url)) return;     // 공유 API는 항상 네트워크(서버가 진실)
+  // 매니페스트는 항상 네트워크(nginx no-cache) — 설치·WebAPK 갱신이 낡은 캐시본을 보지 않게.
+  if (url.origin === self.location.origin && url.pathname === '/manifest.webmanifest') return;
 
   // 페이지 이동: network-first, 오프라인이면 캐시된 셸.
   if (req.mode === 'navigate') {
