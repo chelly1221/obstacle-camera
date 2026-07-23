@@ -6,6 +6,7 @@
 <title>AR 전파장애물</title>
 <meta name="description" content="토지이용계획도(VWorld lt_c_lhblpn)를 카메라 화면 위에 증강현실로 겹쳐 보여주는 웹앱. GPS·나침반으로 건물의 거리·방위를 실시간 표시합니다.">
 <meta name="theme-color" content="#08090b">
+<meta name="color-scheme" content="dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="AR 전파장애물">
@@ -22,6 +23,9 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
   *{box-sizing:border-box}
+  /* color-scheme:dark — 크로미움이 회전·키보드·리사이즈 합성 순간 노출하는 '기본 캔버스 배경'을
+     흰색 대신 어둡게. 안드로이드 설치형(WebAPK)에서 위/아래 끝이 순간 하얗게 뜨는 현상 방지. */
+  :root{color-scheme:dark}
   html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#08090b;font-family:"Pretendard Variable",Pretendard,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
   a{color:#e5688f;text-decoration:none}
   a:hover{color:#f19bb5}
@@ -249,6 +253,7 @@
     </div>
     <div style="display:flex;gap:10px;padding:16px 20px 26px">
       <div id="viewer-close" style="cursor:pointer;flex:1;text-align:center;background:rgba(255,255,255,.1);border-radius:12px;padding:13px;font-size:14px;font-weight:700">닫기</div>
+      <div id="viewer-download" style="cursor:pointer;text-align:center;background:#a60739;border-radius:12px;padding:13px 22px;font-size:14px;font-weight:700">다운로드</div>
       <div id="viewer-delete" style="cursor:pointer;text-align:center;background:rgba(180,40,60,.25);border:1px solid rgba(220,80,100,.4);border-radius:12px;padding:13px 22px;font-size:14px;font-weight:700;color:#ff9aab">삭제</div>
     </div>
   </div>
@@ -767,32 +772,21 @@
     this._serverPhotos.forEach(function (p) { sel[p.id] = true; });
     this.setState({ selected: sel });
   };
+  // 원본 JPEG 한 장을 바로 다운로드(서버가 Content-Disposition attachment 부여).
+  app.downloadPhoto = function (id) {
+    var a = document.createElement('a');
+    a.href = API_BASE + '/photos/' + id + '?dl=1';
+    a.download = 'arcam-' + id + '.jpg';
+    document.body.appendChild(a); a.click(); a.remove();
+  };
   app.downloadSelected = function () {
     var ids = this._selectedIds();
     if (!ids.length) return this.flash('선택된 사진이 없습니다');
-    if (ids.length === 1) {
-      // 단일: 원본 JPEG을 바로 다운로드(서버가 Content-Disposition attachment 부여).
-      var a = document.createElement('a');
-      a.href = API_BASE + '/photos/' + ids[0] + '?dl=1';
-      a.download = 'arcam-' + ids[0] + '.jpg';
-      document.body.appendChild(a); a.click(); a.remove();
-      return;
-    }
-    // 다중: 서버가 zip으로 묶어 준다.
+    // zip으로 묶지 않고 한 장씩 개별 JPEG로 받는다.
+    // 브라우저가 다중 다운로드 허용을 물을 수 있어 클릭 간격을 둔다.
     var self = this;
-    this.flash('사진 ' + ids.length + '장 압축 중…');
-    fetch(API_BASE + '/photos/zip', { method: 'POST', headers: api._headers(true), body: JSON.stringify({ ids: ids }) })
-      .then(function (r) { if (r.status === 413) throw new Error('too-big'); if (!r.ok) throw new Error('zip ' + r.status); return r.blob(); })
-      .then(function (blob) {
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement('a'); a.href = url; a.download = 'arcam-photos-' + ids.length + '.zip';
-        document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(function () { try { URL.revokeObjectURL(url); } catch (e) {} }, 15000);
-        self.flash('다운로드를 시작합니다');
-      })
-      .catch(function (err) {
-        self.flash(err && err.message === 'too-big' ? '한 번에 받기엔 너무 많아요 — 나눠서 선택해 주세요' : '다운로드 실패 — 연결을 확인하세요');
-      });
+    ids.forEach(function (id, i) { setTimeout(function () { self.downloadPhoto(id); }, i * 400); });
+    if (ids.length > 1) this.flash('사진 ' + ids.length + '장 다운로드 시작');
   };
   app.deleteSelected = function () {
     var ids = this._selectedIds();
@@ -1507,7 +1501,9 @@
     if (msg) { this.setState({ toast: msg }); clearTimeout(this._tt); this._tt = setTimeout(function () { self.setState({ toast: null }); }, 1700); }
   };
   app.capturePhoto = function () {
-    var W = 720, H = 1280;                       // 오버레이 디자인 좌표계 (아래 핀·글씨 상수는 이 기준 그대로)
+    // 오버레이 디자인 좌표계 (아래 핀·글씨 상수는 이 기준 그대로). 가로 모드에선 16:9 가로로 저장.
+    var land = this._isLandscape();
+    var W = land ? 1280 : 720, H = land ? 720 : 1280;
     var v = this._video, hasVideo = this.state.cameraOn && v && v.videoWidth;
     var sw, sh, sx, sy;
     if (hasVideo) {
@@ -1568,7 +1564,7 @@
     var self = this, ts = Date.now();
     var uid = 'p-' + ts.toString(36) + '-' + Math.random().toString(36).slice(2, 9);
     var meta = { w: c.width, h: c.height, ts: ts, uid: uid };
-    var TS = 480, side = Math.min(c.width, c.height);   // 세로 사진 → 가로폭이 한 변
+    var TS = 480, side = Math.min(c.width, c.height);   // 짧은 변 기준 중앙 정사각 크롭
     var tc = document.createElement('canvas'); tc.width = TS; tc.height = TS;
     var tctx = tc.getContext('2d'); tctx.imageSmoothingQuality = 'high';
     tctx.drawImage(c, (c.width - side) / 2, (c.height - side) / 2, side, side, 0, 0, TS, TS);
@@ -1828,6 +1824,7 @@
 
     // 뷰어
     $('viewer-close').addEventListener('click', function () { app.setState({ viewer: null }); });
+    $('viewer-download').addEventListener('click', function () { if (app.state.viewer != null) app.downloadPhoto(app.state.viewer); });
     $('viewer-delete').addEventListener('click', function () { if (app.state.viewer != null) app.deletePhoto(app.state.viewer); });
 
     // 목록 (위임) — 건물 편집/삭제 + 그룹 관리
