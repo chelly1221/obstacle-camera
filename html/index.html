@@ -1995,9 +1995,12 @@
     if (P.isIOS) return P.inApp ? 'ios-inapp' : (P.isSafari ? 'ios-safari' : 'ios-other');
     if (P.isAndroid) {
       if (P.inApp) return 'inapp';                 // 인앱 웹뷰 → 크롬으로 열기
+      // 비크롬(삼성·Edge·웨일 등)도 beforeinstallprompt를 쏘므로 브라우저 판정이
+      // deferredPrompt보다 먼저여야 한다 — 안 그러면 크롬 권장 안내 대신 설치
+      // 안내가 먼저 뜨고, 거기서 설치하면 fullscreen이 무시돼 흰 시스템 바가 남는다.
+      if (!P.isChrome) return 'android-chrome';     // 삼성/파폭 등 → 크롬 권장 먼저
       if (deferredPrompt) return 'android-install';
-      if (P.isChrome) return 'android-manual';
-      return 'android-chrome';                      // 삼성/파폭 등 → 크롬 권장
+      return 'android-manual';
     }
     return deferredPrompt ? 'desktop-install' : null;
   }
